@@ -33,7 +33,9 @@ class LSlimExtension extends AbstractExtension
             new TwigFunction('has_errors', [ $this, 'hasErrors' ]),
             new TwigFunction('has_error', [ $this, 'hasError' ]),
             new TwigFunction('errors', [ $this, 'getErrors' ]),
-            new TwigFunction('error', [ $this, 'getError' ])
+            new TwigFunction('error', [ $this, 'getError' ]),
+            new TwigFunction('has_flash', [ $this, 'hasFlashMessage' ]),
+            new TwigFunction('flash', [ $this, 'getFlashMessage' ])
         ];
     }
 
@@ -55,22 +57,28 @@ class LSlimExtension extends AbstractExtension
      * @param string $name
      * @param array $data
      * @param array $queryParams
+     * @return string
      */
     public function urlFor($name, array $data = [], array $queryParams = [])
     {
         $router = $this->container->get('router');
         $request = $this->container->get('request');
+        $path = $router->relativePathFor($name, $data, $queryParams);
+
+        if ($this->container->has('base_url')) {
+            return rtrim($this->container->get('base_url'), '/') . $path;
+        }
 
         if ($this->container->has('url_force_https') && $this->container->get('url_force_https')) {
             return $request->getUri()
                 ->withUserInfo('', '')
                 ->withScheme('https')
-                ->withPort(443)->getBaseUrl() . $router->relativePathFor($name, $data, $queryParams);
+                ->withPort(443)->getBaseUrl() . $path;
         }
 
         return $request->getUri()
             ->withUserInfo('', '')
-            ->getBaseUrl() . $router->relativePathFor($name, $data, $queryParams);
+            ->getBaseUrl() . $path;
     }
 
     /**
@@ -125,5 +133,26 @@ class LSlimExtension extends AbstractExtension
     {
         $validator = $this->container->get('validator');
         return $validator->getError($name);
+    }
+
+    /**
+     * @param string $key
+     * @return bool
+     */
+    public function hasFlashMessage($key)
+    {
+        $flash = $this->container->get('flash');
+        return $flash->hasMessage($key);
+    }
+
+    /**
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public function getFlashMessage($key, $default = null)
+    {
+        $flash = $this->container->get('flash');
+        return $flash->getFirstMessage($key, $default);
     }
 }
