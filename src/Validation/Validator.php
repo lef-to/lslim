@@ -4,7 +4,6 @@ namespace Lslim\Validation;
 
 use Respect\Validation\Validator as RespectValidator;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Http\Message\UploadedFileInterface as File;
 use Psr\Log\LoggerInterface as Logger;
 use Respect\Validation\Exceptions\ValidationException;
 use Respect\Validation\Exceptions\NestedValidationException;

@@ -5,7 +5,6 @@ namespace LSlim\Console;
 use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\Command;
-use Illuminate\Database\Capsule\Manager as Database;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository as Repository;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Database\Migrations\Migrator;
