@@ -3,17 +3,21 @@ declare(strict_types=1);
 namespace Lslim\Session;
 
 use SessionHandlerInterface;
-use Illuminate\Database\Capsule\Manager as Database;
+use Psr\Container\ContainerInterface;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Psr\Log\LoggerInterface;
 use Exception;
 
 class DatabaseHandler implements SessionHandlerInterface
 {
     /**
-     * @var \Illuminate\Database\Capsule\Manager;
+     * @var \Psr\Container\ContainerInterface
      */
-    private $db;
+    private $container;
+
+    /**
+     * @var string
+     */
+    private $connectionName;
 
     /**
      * @var string
@@ -21,25 +25,25 @@ class DatabaseHandler implements SessionHandlerInterface
     private $tableName;
 
     /**
-     * @var \Psr\Log\LoggerInterface
-     */
-    private $logger;
-
-    /**
-     * @param \Illuminate\Database\Capsule\Manager $db
-     * @param \Psr\Log\LoggerInterface $logger
+     * @param \Psr\Container\ContainerInterface $container
      * @param string $tableName
+     * @param string $connectionName
      */
-    public function __construct(Database $db, LoggerInterface $logger, $tableName = 'session')
-    {
-        $this->db = $db;
-        $this->logger = $logger;
+    public function __construct(
+        ContainerInterface $container,
+        $tableName = 'session',
+        $connectionName = 'default'
+    ) {
+        $this->container = $container;
+        $this->connectionName = $connectionName;
         $this->tableName = $tableName;
     }
 
     private function table(): QueryBuilder
     {
-        return $this->db->getConnection()->table($this->tableName);
+        return $this->container->get('db')
+            ->getConnection($this->connectionName)
+            ->table($this->tableName);
     }
 
     /**
@@ -63,8 +67,30 @@ class DatabaseHandler implements SessionHandlerInterface
      */
     public function destroy($id): bool
     {
-        $table = $this->table();
-        return ($table->where('id', $id)->delete() > 0);
+        try {
+            $this->container->get('db')
+                ->getConnection($this->connectionName)
+                ->transaction(function () use ($id) {
+                    $this->table()->where('id', $id)->delete();
+                    $this->onDestroyed($id);
+                });
+
+            return true;
+        } catch (Exception $ex) {
+            $this->container->get('logger')->error(
+                'Failed to destroy session data.',
+                [
+                    'session_id' => $id,
+                    'exception' => $ex
+                ]
+            );
+        }
+
+        return false;
+    }
+
+    protected function onDestroyed($id)
+    {
     }
 
     /**
@@ -72,9 +98,15 @@ class DatabaseHandler implements SessionHandlerInterface
      */
     public function gc($maxlifetime)
     {
-        $ts = time() - $maxlifetime;
+//        $ts = time() - $maxlifetime;
+        $ts = time();
         $table = $this->table();
-        $table->where('ts', '<', $ts)->delete();
+        $list = $table->where('ts', '<', $ts)->pluck('id');
+
+        foreach ($list as $id) {
+            $this->destroy($id);
+        }
+
         return true;
     }
 
@@ -99,29 +131,33 @@ class DatabaseHandler implements SessionHandlerInterface
     public function write($session_id, $session_data)
     {
         try {
-            $this->db->getConnection()->transaction(function () use ($session_id, $session_data) {
-                $current = $this->table()->where('id', $session_id)
-                    ->lockForUpdate()
-                    ->first([ 'ts' ]);
+            $this->container->get('db')
+                ->getConnection($this->connectionName)
+                ->transaction(function () use ($session_id, $session_data) {
+                    $current = $this->table()->where('id', $session_id)
+                        ->lockForUpdate()
+                        ->first([ 'ts' ]);
 
-                if ($current === null) {
                     $ts = time();
-                    $this->table()->insert([
-                        'id' => $session_id,
-                        'data' => $session_data,
-                        'ts' => $ts
-                    ]);
-                } else {
-                    $this->table()
-                        ->where('id', $session_id)
-                        ->update([
-                            'data' => $session_data
+                    if ($current === null) {
+                        $this->table()->insert([
+                            'id' => $session_id,
+                            'data' => $session_data,
+                            'ts' => $ts
                         ]);
-                }
-            });
+                    } else {
+                        $this->table()
+                            ->where('id', $session_id)
+                            ->update([
+                                'data' => $session_data,
+                                'ts' => $ts
+                            ]);
+                    }
+                });
+
             return true;
         } catch (Exception $ex) {
-            $this->logger->error(
+            $this->container->get('logger')->error(
                 'Failed to write session data.',
                 [ 'exception' => $ex ]
             );

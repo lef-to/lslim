@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Console\Command as IlluminateCommand;
 use LSlim\Console\Container;
 use LSlim\Console\Command\Mail\TestCommand as MailTestCommand;
+use LSlim\Console\Command\Session\DatabaseInitCommand as SessionDatabaseInitCommand;
 
 class Application extends BaseApplication
 {
@@ -35,7 +36,12 @@ class Application extends BaseApplication
      */
     private $laravel;
 
-    public function __construct(ContainerInterface $container, $appName, $version)
+    /**
+     * @param string $appName
+     * @param string $version
+     * @param \Psr\Container\ContainerInterface $container
+     */
+    public function __construct($appName, $version, ContainerInterface $container)
     {
         parent::__construct($appName, $version);
         $this->container = $container;
@@ -64,6 +70,7 @@ class Application extends BaseApplication
         $this->add(new RollbackCommand($migrator));
         $this->add(new StatusCommand($migrator));
         $this->add(new MailTestCommand($this->container, $appName));
+        $this->add(new SessionDatabaseInitCommand());
     }
 
     /**

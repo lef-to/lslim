@@ -5,24 +5,14 @@ namespace LSlim\Middleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+use LSlim\Middleware\PsrMiddlewareAdapter\Handler;
 
-class PsrMiddlewareAdapter implements RequestHandlerInterface
+class PsrMiddlewareAdapter
 {
     /**
      * @var MiddlewareInterface
      */
     private $middleware;
-
-    /**
-     * @var ResponseInterface
-     */
-    private $response;
-
-    /**
-     * @var callable
-     */
-    private $next;
 
     /**
      * @param \Psr\Http\Server\MiddlewareInterface $middleware
@@ -32,19 +22,18 @@ class PsrMiddlewareAdapter implements RequestHandlerInterface
         $this->middleware = $middleware;
     }
 
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
-    {
-        $this->response = $response;
-        $this->next = $next;
-
-        return $this->middleware->process($request, $this);
+    public function __invoke(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        callable $next
+    ): ResponseInterface {
+        return $this->middleware->process($request, new Handler($response, $next));
     }
 
-    public function handle(ServerRequestInterface $request): ResponseInterface
-    {
-        return ($this->next)($request, $this->response);
-    }
-
+    /**
+     * @param \Psr\Http\Server\MiddlewareInterface $middleware
+     * @return callable
+     */
     public static function adapt(MiddlewareInterface $middleware)
     {
         return new static($middleware);

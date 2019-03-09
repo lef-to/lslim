@@ -5,6 +5,8 @@ namespace LSlim\Console;
 use Psr\Container\ContainerInterface;
 use Illuminate\Container\Container as BaseContainer;
 use Illuminate\Contracts\Foundation\Application as ApplicationInterface;
+use Illuminate\Support\Str;
+use Closure;
 use BadMethodCallException;
 
 class Container extends BaseContainer implements ApplicationInterface
@@ -19,6 +21,13 @@ class Container extends BaseContainer implements ApplicationInterface
      */
     private $version;
 
+    /**
+     * The custom database path defined by the developer.
+     *
+     * @var string
+     */
+    protected $databasePath;
+
     public function __construct(ContainerInterface $container, $version)
     {
         $this->container = $container;
@@ -31,6 +40,22 @@ class Container extends BaseContainer implements ApplicationInterface
     public function basePath()
     {
         return $this->container->get('app_dir');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function bootstrapPath($path = '')
+    {
+        return $this->basePath() . DIRECTORY_SEPARATOR . 'bootstrap' . ($path ? DIRECTORY_SEPARATOR . $path : $path);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function configPath($path = '')
+    {
+        return $this->container->get('config_dir') . ($path ? DIRECTORY_SEPARATOR . $path : $path);
     }
 
     /**
@@ -60,7 +85,41 @@ class Container extends BaseContainer implements ApplicationInterface
     /**
      * @inheritdoc
      */
-    public function environment()
+    public function environmentPath()
+    {
+        return $this->basePath();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function environmentFile()
+    {
+        return '.env';
+    }
+
+    public function environmentFilePath()
+    {
+        return $this->environmentPath() . DIRECTORY_SEPARATOR . $this->environmentFile();
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function environment(...$environments)
+    {
+        if (count($environments) > 0) {
+            $patterns = is_array($environments[0]) ? $environments[0] : $environments;
+            return Str::is($patterns, $this->container->get('app_mode'));
+        }
+
+        return $this->container->get('app_mode');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function detectEnvironment(Closure $callback)
     {
         return $this->container->get('app_mode');
     }
@@ -80,6 +139,39 @@ class Container extends BaseContainer implements ApplicationInterface
     {
         throw new BadMethodCallException('Method getCachedServicesPath is not implemented.');
     }
+
+    /**
+     * @inheritdoc
+     */
+    public function configurationIsCached()
+    {
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCachedConfigPath()
+    {
+        throw new BadMethodCallException('Method getCachedConfigPath is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function routesAreCached()
+    {
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCachedRoutesPath()
+    {
+        throw new BadMethodCallException('Method getCachedRoutesPath is not implemented.');
+    }
+
 
     /**
      * @inheritdoc
@@ -137,6 +229,11 @@ class Container extends BaseContainer implements ApplicationInterface
         return $this->version;
     }
 
+    public function bootstrapWith(array $bootstrappers)
+    {
+        throw new BadMethodCallException('Method bootstrapWith is not implemented.');
+    }
+
     /**
      * Resolve the given type from the container.
      *
@@ -149,5 +246,130 @@ class Container extends BaseContainer implements ApplicationInterface
     {
         $abstract = $this->getAlias($abstract);
         return parent::make($abstract, $parameters);
+    }
+
+    /**
+     * Get the path to the database directory.
+     *
+     * @param  string  $path Optionally, a path to append to the database path
+     * @return string
+     */
+    public function databasePath($path = '')
+    {
+        return ($this->databasePath ?: $this->basePath() . DIRECTORY_SEPARATOR . 'database')
+            . ($path ? DIRECTORY_SEPARATOR . $path : $path);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function useDatabasePath($path)
+    {
+        $this->databasePath = $path;
+        $this->instance('path.database', $path);
+        return $this;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getLocale()
+    {
+        throw new BadMethodCallException('Method getLocalle is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function setLocale($locale)
+    {
+        throw new BadMethodCallException('Method setLocale is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function isLocale($locale)
+    {
+        throw new BadMethodCallException('Method isLocale is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getNamespace()
+    {
+        throw new BadMethodCallException('Method getNamespace is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getProviders($provider)
+    {
+        return [];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasBeenBootstrapped()
+    {
+        return true;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function loadDeferredProviders()
+    {
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function loadEnvironmentFrom($file)
+    {
+        throw new BadMethodCallException('Method loadEnvironmentFrom is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function resolveProvider($provider)
+    {
+        throw new BadMethodCallException('Method resolveProvider is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function resourcePath($path = '')
+    {
+        return $this->basePath() . DIRECTORY_SEPARATOR . 'resources ' . ($path ? DIRECTORY_SEPARATOR . $path : $path);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function shouldSkipMiddleware()
+    {
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function storagePath()
+    {
+        return $this->container->get('data_dir');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function terminate()
+    {
+        throw new BadMethodCallException('Method terminate is not implemented.');
     }
 }

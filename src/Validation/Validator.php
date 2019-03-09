@@ -4,7 +4,9 @@ namespace Lslim\Validation;
 
 use Respect\Validation\Validator as RespectValidator;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\UploadedFileInterface;
 use Psr\Log\LoggerInterface as Logger;
+use Illuminate\Support\Arr;
 use Respect\Validation\Exceptions\ValidationException;
 use Respect\Validation\Exceptions\NestedValidationException;
 use Exception;
@@ -14,13 +16,16 @@ class Validator
     const TYPE_FILE = 'file';
     const TYPE_BOOL = 'file';
     const OPTION_TYPE = 'type';
+    const OPTION_DEFAULT = 'default';
     const OPTION_KEY = 'key';
-    const OPTION_DO_ASSERT = 'do_assert';
+    const OPTION_ASSERT = 'assert';
+    const OPTION_TRIM = 'trim';
+    const OPTION_EMPTY_TO_NULL = 'empty_to_null';
 
     /**
      * @var array
      */
-    protected $values;
+    protected $params;
 
     /**
      * @var array
@@ -48,18 +53,36 @@ class Validator
     public function __construct(Logger $logger = null)
     {
         $this->logger = $logger;
+        $this->params = [];
+        $this->files = [];
+        $this->rules = [];
+        $this->errors = [];
     }
 
-    protected function fixValue($value, $type)
+    protected function fixValue($value, array $option)
     {
+        $type = $option[static::OPTION_TYPE] ?? '';
+        $trim = $option[static::OPTION_TRIM] ?? true;
+
         if (is_array($value)) {
-            return array_map(function ($v) use ($type) {
-                $v = $this->fixValue($v, $type);
+            return array_map(function ($v) use ($option) {
+                return $this->fixValue($v, $option);
             }, $value);
         }
-        
+      
+        if ($trim && $value !== null) {
+            $value = trim($value);
+        }
+
         if ($value === '') {
-            $value = null;
+            $emptyToNull = $option[static::OPTION_EMPTY_TO_NULL] ?? true;
+            if ($emptyToNull) {
+                $value = null;
+            }
+        }
+
+        if ($value === null && isset($option[static::OPTION_DEFAULT])) {
+            $value = $option[static::OPTION_DEFAULT];
         }
 
         if ($type == static::TYPE_BOOL) {
@@ -69,7 +92,7 @@ class Validator
         return $value;
     }
 
-    protected function validateBody(Request $req)
+    public function validateRequest(Request $req)
     {
         $params = $req->getParsedBody();
         if ($params === null) {
@@ -94,40 +117,47 @@ class Validator
                 foreach ($key as $k) {
                     $v = null;
                     if ($type == static::TYPE_FILE) {
-                        $v = $files[$k] ?? null;
+                        $v = Arr::get($files, $k, null);
+                        if ($v instanceof UploadedFileInterface && $v->getError() == UPLOAD_ERR_NO_FILE) {
+                            $v = null;
+                        }
+                        Arr::set($this->files, $k, $v);
                     } else {
-                        $v = $params[$k] ?? null;
+                        $v = $this->fixValue(Arr::get($params, $k, null), $option);
+                        Arr::set($this->params, $k, $v);
                     }
-                    $value[$k] = $v;
+                    $value[] = $v;
                 }
             } else {
                 if ($type == static::TYPE_FILE) {
-                    $value = $files[$key] ?? null;
+                    $value = Arr::get($files, $key, null);
+                    if ($value instanceof UploadedFileInterface && $value->getError() == UPLOAD_ERR_NO_FILE) {
+                        $value = null;
+                    }
+                    Arr::set($this->files, $key, $value);
                 } else {
-                    $value = $params[$key] ?? null;
+                    $value = $this->fixValue(Arr::get($params, $key, null), $option);
+                    Arr::set($this->params, $key, $value);
                 }
             }
 
-            $value = $this->fixValue($value, $type);
-
-            if (isset($option['default']) && ($value === null || (is_array($value) && empty($value)))) {
-                $value = $option['default'];
-            }
-
-            $assert = $option[static::OPTION_DO_ASSERT] ?? false;
             try {
-                if ($assert) {
+                if ($option[static::OPTION_ASSERT] ?? false) {
                     $rule['rule']->assert($value);
                 } else {
                     $rule['rule']->check($value);
                 }
-
-                if ($type == static::TYPE_FILE) {
-                    $this->files[$name] = $value;
-                } else {
-                    $this->values[$name] = $value;
-                }
             } catch (ValidationException $ex) {
+                // ファイルの場合はバリデーションがとおらなかったものは削除する
+                if ($type == static::TYPE_FILE) {
+                    if (is_array($key)) {
+                        foreach ($key as $k) {
+                            Arr::set($this->files, $k, null);
+                        }
+                    } else {
+                        Arr::set($this->files, $key, null);
+                    }
+                }
                 $this->setError($name, $ex);
             } catch (Exception $ex) {
                 if ($this->logger !== null) {
@@ -185,9 +215,9 @@ class Validator
     /**
      * @return array
      */
-    public function getValues()
+    public function getParams()
     {
-        return $this->values;
+        return $this->params;
     }
 
     /**

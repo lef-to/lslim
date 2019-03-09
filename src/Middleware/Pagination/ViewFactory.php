@@ -3,13 +3,17 @@ declare(strict_types=1);
 namespace LSlim\Middleware\Pagination;
 
 use Illuminate\Contracts\View\Factory;
+use Slim\Views\Twig;
 use BadMethodCallException;
 
 class ViewFactory implements Factory
 {
+    /**
+     * @var \Slim\Views\Twig
+     */
     private $view;
 
-    public function __construct($view)
+    public function __construct(Twig $view)
     {
         $this->view = $view;
     }

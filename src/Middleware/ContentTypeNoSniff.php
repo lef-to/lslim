@@ -7,8 +7,11 @@ use Psr\Http\Message\ServerRequestInterface;
 
 class ContentTypeNoSniff
 {
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
-    {
+    public function __invoke(
+        ServerRequestInterface $request,
+        ResponseInterface $response,
+        callable $next
+    ): ResponseInterface {
         $response = $next($request, $response);
 
         if (!$response->hasHeader('X-Content-Type-Options')) {

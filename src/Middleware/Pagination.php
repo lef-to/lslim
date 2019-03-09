@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace LSlim\Middleware;
 
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Http\Uri;
@@ -9,19 +10,21 @@ use Illuminate\Pagination\Paginator;
 
 class Pagination
 {
+    /**
+     * @var \Psr\Container\ContainerInterface
+     */
     private $container;
 
-    public function __construct($container)
+    public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
     }
 
     public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
     {
-        $c = $this->container;
         Paginator::viewFactoryResolver(
-            function () use ($c) {
-                return new Pagination\ViewFactory($c->view);
+            function () {
+                return new Pagination\ViewFactory($this->container->get('view'));
             }
         );
 
@@ -29,9 +32,11 @@ class Pagination
             function () use ($request) {
                 $uri = $request->getUri();
                 if ($uri instanceof Uri) {
-                    return ltrim($uri->getBasePath(), '/') . '/' . ltrim($uri->getPath(), '/');
+                    return '/' . trim($uri->getBasePath(), '/')
+                        . '/'
+                        . ltrim($uri->getPath(), '/');
                 }
-                return ltrim($uri->getPath(), '/');
+                return '/' . trim($uri->getPath(), '/');
             }
         );
 

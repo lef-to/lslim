@@ -5,7 +5,8 @@ namespace LSlim\Twig;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 use Psr\Container\ContainerInterface;
-
+use Slim\Http\Request;
+use Slim\Http\Uri;
 class LSlimExtension extends AbstractExtension
 {
     /**
@@ -35,7 +36,7 @@ class LSlimExtension extends AbstractExtension
             new TwigFunction('errors', [ $this, 'getErrors' ]),
             new TwigFunction('error', [ $this, 'getError' ]),
             new TwigFunction('has_flash', [ $this, 'hasFlashMessage' ]),
-            new TwigFunction('flash', [ $this, 'getFlashMessage' ])
+            new TwigFunction('flash', [ $this, 'getFlashMessage' ]),
         ];
     }
 
@@ -61,24 +62,31 @@ class LSlimExtension extends AbstractExtension
      */
     public function urlFor($name, array $data = [], array $queryParams = [])
     {
-        $router = $this->container->get('router');
         $request = $this->container->get('request');
+        $router = $this->container->get('router');
         $path = $router->relativePathFor($name, $data, $queryParams);
 
         if ($this->container->has('base_url')) {
             return rtrim($this->container->get('base_url'), '/') . $path;
         }
 
-        if ($this->container->has('url_force_https') && $this->container->get('url_force_https')) {
-            return $request->getUri()
-                ->withUserInfo('', '')
+        $uri = $request->getUri()
+            ->withUserInfo('', '')
+            ->withQuery('')
+            ->withFragment('');
+
+        if ($request->getHeaderLine('X_FORWARDED_PROTO') == 'https'
+            || ($this->container->has('url_force_https') && $this->container->get('url_force_https'))) {
+            $uri = $uri
                 ->withScheme('https')
-                ->withPort(443)->getBaseUrl() . $path;
+                ->withPort(443);
         }
 
-        return $request->getUri()
-            ->withUserInfo('', '')
-            ->getBaseUrl() . $path;
+        if ($uri instanceof Uri) {
+            return $uri->getBaseUrl() . $path;
+        }
+
+        return rtrim((string)$uri->withPath('/'), '/') . $path;
     }
 
     /**

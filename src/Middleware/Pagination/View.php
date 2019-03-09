@@ -3,16 +3,32 @@ declare(strict_types=1);
 namespace LSlim\Middleware\Pagination;
 
 use Illuminate\Contracts\View\View as ViewInterface;
+use Slim\Views\Twig;
 use BadMethodCallException;
 
 class View implements ViewInterface
 {
+    /**
+     * @var \Slim\Views\Twig
+     */
     private $view;
+
+    /**
+     * @var string
+     */
     private $name;
+
+    /**
+     * @var array
+     */
     private $data;
+    
+    /**
+     * @var array
+     */
     private $mergeData;
 
-    public function __construct($view, $name, $data, $mergeData)
+    public function __construct(Twig $view, $name, $data, $mergeData)
     {
         $this->view = $view;
         $this->name = $name;
@@ -20,18 +36,35 @@ class View implements ViewInterface
         $this->mergeData = $mergeData;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function name()
     {
         return $this->name;
     }
 
+    /**
+     * @inheritdoc
+     */
     public function render()
     {
         return $this->view->fetch($this->name, $this->data);
     }
 
+    /**
+     * @inheritdoc
+     */
     public function with($key, $value = null)
     {
         throw new BadMethodCallException('Method with is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getData()
+    {
+        return $this->data;
     }
 }

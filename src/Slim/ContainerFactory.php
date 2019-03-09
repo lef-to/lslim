@@ -10,25 +10,18 @@ use Slim\Flash\Messages as Flash;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RotatingFileHandler;
+use Monolog\Processor\IntrospectionProcessor;
+use Monolog\Formatter\LineFormatter;
 use Illuminate\Database\Capsule\Manager as Database;
 use Twig\Extension\DebugExtension as TwigDebugExtension;
+use Intervention\Image\ImageManager;
 use LSlim\Twig\LSlimExtension;
 use LSlim\Validation\Validator;
 use LSlim\Mail\Mailer;
-use RuntimeException;
+use LSlim\Middleware\Pagination;
 
 class ContainerFactory
 {
-    private static function mkdir($path, $mode)
-    {
-        if (!is_dir($path)) {
-            mkdir($path, $mode, true);
-            if (!is_dir($path)) {
-                throw new RuntimeException('Failed to make ' . $path);
-            }
-        }
-    }
-
     private static function makeConfigPath(Container $c, $name)
     {
         return $c->get('config_dir')
@@ -57,55 +50,61 @@ class ContainerFactory
 
         if (!$container->has('var_dir')) {
             $container['var_dir'] = function (Container $c) {
-                $path = ltrim($c->get('app_dir'), DIRECTORY_SEPARATOR) . '/var';
-                static::mkdir($path, 0775);
-                return $path;
+                return rtrim($c->get('app_dir'), DIRECTORY_SEPARATOR) . '/var';
             };
         }
 
         if (!$container->has('tmp_dir')) {
             $container['tmp_dir'] = function (Container $c) {
-                $path = ltrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/tmp';
-                static::mkdir($path, 0775);
-                return $path;
+                return rtrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/tmp';
             };
         }
 
         if (!$container->has('cache_dir')) {
             $container['cache_dir'] = function (Container $c) {
-                $path = ltrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/cache';
-                static::mkdir($path, 0775);
-                return $path;
+                return rtrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/cache';
             };
         }
 
         if (!$container->has('log_dir')) {
             $container['log_dir'] = function (Container $c) {
-                $path = ltrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/log';
-                static::mkdir($path, 0775);
-                return $path;
+                return rtrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/log';
             };
         }
 
         if (!$container->has('data_dir')) {
             $container['data_dir'] = function (Container $c) {
-                $path = ltrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/data';
-                static::mkdir($path, 0775);
-                return $path;
+                return rtrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/data';
             };
         }
 
         $container['logger'] = function (Container $c) use ($appName) {
             $logger  = new Logger($appName);
             $level = $c->has('log_level') ? $c->get('log_level') : Logger::DEBUG;
-            if (php_sapi_name() == 'cli-server') {
+            $introspectionLevel = $c->has('log_introspection_level')
+                ? $c->has('log_introspection_level')
+                : Logger::DEBUG;
+
+            $processor = new IntrospectionProcessor($introspectionLevel);
+            $logger->pushProcessor($processor);
+
+            $sapiName = php_sapi_name();
+            if ($sapiName == 'cli' || $sapiName == 'cli-server') {
                 $handler = new StreamHandler('php://stderr', $level);
+
+                $formatter = new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context%\n");
+                $handler->setFormatter($formatter);
                 $logger->pushHandler($handler);
             }
 
             $name = $c->get('log_dir') . DIRECTORY_SEPARATOR . $appName . '.log';
             $rotate = $c->has('log_rotate') ? $c->get('log_rorate') : 10;
             $handler = new RotatingFileHandler($name, $rotate, $level);
+
+            $formatter = new LineFormatter();
+            $formatter->includeStacktraces(true);
+
+            $handler->setFormatter($formatter);
             $logger->pushHandler($handler);
 
             return $logger;
@@ -114,12 +113,9 @@ class ContainerFactory
         $container['view'] = function (Container $c) {
             $options = [
                 'auto_reload' => true,
-                'cache' => $c->get('cache_dir')
+                'cache' => $c->get('cache_dir'),
+                'debug' => ($c->get('app_mode') != 'production') ? true : false
             ];
-
-            if ($c->mode != 'production') {
-                $options['debug'] = true;
-            }
 
             $path = $c->get('app_dir') . DIRECTORY_SEPARATOR . 'templates';
             $view = new Twig($path, $options);
@@ -175,6 +171,18 @@ class ContainerFactory
 
             $config = require static::makeConfigPath($c, 'mailer.php');
             return new Mailer($config, $c->get('logger'));
+        };
+
+        $container['paginator'] = function (Container $c) {
+            return new Pagination($c);
+        };
+
+        $container['image_manager'] = function (Container $c) {
+            return new ImageManager([
+                'cache' => [
+                    'path' => rtrim($c->get('cache_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'image_manager'
+                ]
+            ]);
         };
 
         return $container;

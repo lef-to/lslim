@@ -1,6 +1,7 @@
 {
     "name": "lefto/lslim",
     "description": "Utility files for Slim framework version 3.",
+    "license": "MIT",
     "authors": [
         {
             "name": "Koji Ogawa",
@@ -13,24 +14,27 @@
         "slim/twig-view": "^2.4",
         "slim/csrf": "^0.8.3",
         "slim/flash": "^0.4.0",
-        "illuminate/database": "^5.7",
-        "illuminate/filesystem": "^5.7",
+        "illuminate/database": "^5.8",
+        "illuminate/filesystem": "^5.8",
         "doctrine/dbal": "^2.9",
-        "illuminate/console": "^5.7",
-        "illuminate/pagination": "^5.7",
+        "illuminate/console": "^5.8",
+        "illuminate/pagination": "^5.8",
         "monolog/monolog": "^1.24",
         "guzzlehttp/psr7": "^1.5",
         "respect/validation": "^1.1",
-        "genkgo/mail": "^2.5",
         "gcrico/swift-mailer-psr-logger-plugin": "@stable",
         "egulias/email-validator": "^2.1",
         "swiftmailer/swiftmailer": "^6.1",
         "middlewares/trailing-slash": "^1.1",
-        "dflydev/fig-cookies": "^2.0"
+        "dflydev/fig-cookies": "^2.0",
+        "symfony/process": "^4.2",
+        "intervention/image": "^2.4",
+        "intervention/imagecache": "^2.3",
+        "slim/http-cache": "^0.4.0"
     },
     "autoload": {
         "psr-4": {
-            "Lslim\\": "src"
+            "LSlim\\": "src"
         }
     }
 }
