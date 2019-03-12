@@ -14,7 +14,7 @@ use Exception;
 class Validator
 {
     const TYPE_FILE = 'file';
-    const TYPE_BOOL = 'file';
+    const TYPE_BOOL = 'bool';
     const OPTION_TYPE = 'type';
     const OPTION_DEFAULT = 'default';
     const OPTION_KEY = 'key';
