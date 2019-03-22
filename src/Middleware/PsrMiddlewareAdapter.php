@@ -5,7 +5,7 @@ namespace LSlim\Middleware;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
-use LSlim\Middleware\PsrMiddlewareAdapter\Handler;
+use Psr\Http\Server\RequestHandlerInterface;
 
 class PsrMiddlewareAdapter
 {
@@ -27,7 +27,33 @@ class PsrMiddlewareAdapter
         ResponseInterface $response,
         callable $next
     ): ResponseInterface {
-        return $this->middleware->process($request, new Handler($response, $next));
+        $handler = new class($response, $next) implements RequestHandlerInterface {
+            /**
+             * @var \Psr\Http\Message\ResponseInterface
+             */
+            private $response;
+
+            /**
+             * @var callable
+             */
+            private $next;
+
+            public function __construct(ResponseInterface $response, callable $next)
+            {
+                $this->response = $response;
+                $this->next = $next;
+            }
+
+            /**
+             * @inheritdoc
+             */
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return ($this->next)($request, $this->response);
+            }
+        };
+
+        return $this->middleware->process($request, $handler);
     }
 
     /**
