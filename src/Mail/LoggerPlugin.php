@@ -9,13 +9,6 @@ use Psr\Log\LogLevel;
 class LoggerPlugin extends SwiftMailerPsrLoggerPlugin
 {
     /**
-     * The PSR-3 logger.
-     *
-     * @var LoggerInterface
-     */
-    private $logger;
-
-    /**
      * Constructor.
      *
      * @param LoggerInterface $logger
@@ -23,7 +16,6 @@ class LoggerPlugin extends SwiftMailerPsrLoggerPlugin
     public function __construct(LoggerInterface $logger)
     {
         parent::__construct($logger);
-        $this->logger = $logger;
     }
 
     /**
