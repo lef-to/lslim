@@ -3,9 +3,46 @@ declare(strict_types=1);
 namespace LSlim\Util;
 
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\UriInterface;
 
 class Request
 {
+    /**
+     * @param \Psr\Http\Message\RequestInterface $request
+     * @return \Psr\Http\Message\UriInterface
+     */
+    public static function getCurrentUri(RequestInterface $request): UriInterface
+    {
+        $uri = $request->getUri()
+            ->withUserInfo('', '');
+
+        $proto = $request->getHeaderLine('CLOUDFRONT_FORWARDED_PROTO');
+        if ($proto == '') {
+            $proto = $request->getHeaderLine('X_FORWARDED_PROTO');
+        }
+        $port = $request->getHeaderLine('X_FORWARDED_PORT');
+
+        if ($proto != $uri->getScheme()) {
+            if ($proto == 'https') {
+                $uri->withScheme($proto);
+                if ($port == '') {
+                    $port = 443;
+                }
+            } elseif ($proto == 'http') {
+                $uri->withScheme($proto);
+                if ($port == '') {
+                    $port = 80;
+                }
+            }
+        }
+
+        if ($port != '' && $port != $uri->getPort()) {
+            $uri = $uri->withPort((int)$port);
+        }
+
+        return $uri;
+    }
+
     /**
      * @param \Psr\Http\Message\RequestInterface $req
      * @param array $types
