@@ -19,6 +19,7 @@ use LSlim\Twig\LSlimExtension;
 use LSlim\Validation\Validator;
 use LSlim\Mail\Mailer;
 use LSlim\Middleware\Pagination;
+use LSlim\Util\Request as RequestUtil;
 
 class ContainerFactory
 {
@@ -135,7 +136,7 @@ class ContainerFactory
             $csrf = new Csrf();
             $csrf->setStorageLimit($c->has('csrf_limit') ? $c->get('csrf_limit') : 10);
             $csrf->setFailureCallable(function ($req, $res, $next) use ($c) {
-                $uri = $req->getUri();
+                $uri = RequestUtil::getCurrentUri($req);
                 if ($c->has('logger')) {
                     $c->get('logger')->error(
                         'csrf check failuer.',
