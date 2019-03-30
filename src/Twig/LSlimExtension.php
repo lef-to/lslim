@@ -5,8 +5,9 @@ namespace LSlim\Twig;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 use Psr\Container\ContainerInterface;
-use Slim\Http\Request;
 use Slim\Http\Uri;
+use LSlim\Util\Request as RequestUtil;
+
 class LSlimExtension extends AbstractExtension
 {
     /**
@@ -70,17 +71,9 @@ class LSlimExtension extends AbstractExtension
             return rtrim($this->container->get('base_url'), '/') . $path;
         }
 
-        $uri = $request->getUri()
-            ->withUserInfo('', '')
+        $uri = RequestUtil::getCurrentUri($request)
             ->withQuery('')
             ->withFragment('');
-
-        if ($request->getHeaderLine('X_FORWARDED_PROTO') == 'https'
-            || ($this->container->has('url_force_https') && $this->container->get('url_force_https'))) {
-            $uri = $uri
-                ->withScheme('https')
-                ->withPort(443);
-        }
 
         if ($uri instanceof Uri) {
             return $uri->getBaseUrl() . $path;
