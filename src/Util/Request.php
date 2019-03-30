@@ -17,10 +17,12 @@ class Request
             ->withUserInfo('', '');
 
         $proto = $request->getHeaderLine('CLOUDFRONT_FORWARDED_PROTO');
+        $port = '';
+
         if ($proto == '') {
             $proto = $request->getHeaderLine('X_FORWARDED_PROTO');
+            $port = $request->getHeaderLine('X_FORWARDED_PORT');
         }
-        $port = $request->getHeaderLine('X_FORWARDED_PORT');
 
         if ($proto != $uri->getScheme()) {
             if ($proto == 'https') {
