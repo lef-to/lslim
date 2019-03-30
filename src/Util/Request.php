@@ -24,12 +24,12 @@ class Request
 
         if ($proto != $uri->getScheme()) {
             if ($proto == 'https') {
-                $uri->withScheme($proto);
+                $uri = $uri->withScheme($proto);
                 if ($port == '') {
                     $port = 443;
                 }
             } elseif ($proto == 'http') {
-                $uri->withScheme($proto);
+                $uri = $uri->withScheme($proto);
                 if ($port == '') {
                     $port = 80;
                 }
