@@ -11,7 +11,7 @@ class Request
      * @param \Psr\Http\Message\RequestInterface $request
      * @return \Psr\Http\Message\UriInterface
      */
-    public static function getCurrentUri(RequestInterface $request): UriInterface
+    public static function makeCurrentUri(RequestInterface $request): UriInterface
     {
         $uri = $request->getUri()
             ->withUserInfo('', '');

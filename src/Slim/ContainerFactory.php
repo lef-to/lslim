@@ -136,7 +136,7 @@ class ContainerFactory
             $csrf = new Csrf();
             $csrf->setStorageLimit($c->has('csrf_limit') ? $c->get('csrf_limit') : 10);
             $csrf->setFailureCallable(function ($req, $res, $next) use ($c) {
-                $uri = RequestUtil::getCurrentUri($req);
+                $uri = RequestUtil::makeCurrentUri($req);
                 if ($c->has('logger')) {
                     $c->get('logger')->error(
                         'csrf check failuer.',

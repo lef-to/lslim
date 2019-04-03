@@ -71,7 +71,7 @@ class LSlimExtension extends AbstractExtension
             return rtrim($this->container->get('base_url'), '/') . $path;
         }
 
-        $uri = RequestUtil::getCurrentUri($request)
+        $uri = RequestUtil::makeCurrentUri($request)
             ->withQuery('')
             ->withFragment('');
 
