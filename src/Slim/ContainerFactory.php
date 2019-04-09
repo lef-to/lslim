@@ -121,13 +121,13 @@ class ContainerFactory
             $path = $c->get('app_dir') . DIRECTORY_SEPARATOR . 'templates';
             $view = new Twig($path, $options);
 
-            $view->getEnvironment()->addExtension(new TwigDebugExtension());
+            $view->addExtension(new TwigDebugExtension());
 
             $router = $c->get('router');
             $uri = $c->get('request')->getUri();
 
-            $view->getEnvironment()->addExtension(new TwigExtension($router, $uri));
-            $view->getEnvironment()->addExtension(new LSlimExtension($c));
+            $view->addExtension(new TwigExtension($router, $uri));
+            $view->addExtension(new LSlimExtension($c));
 
             return $view;
         };
