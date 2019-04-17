@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace LSlim\Console;
+namespace LSlim\Illuminate;
 
 use Psr\Container\ContainerInterface;
 use Illuminate\Container\Container as BaseContainer;
@@ -17,21 +17,38 @@ class Container extends BaseContainer implements ApplicationInterface
     private $container;
 
     /**
-     * @var string
-     */
-    private $version;
-
-    /**
      * The custom database path defined by the developer.
      *
      * @var string
      */
     protected $databasePath;
 
-    public function __construct(ContainerInterface $container, $version)
+    public static function create(ContainerInterface $container)
+    {
+        $ret = new static($container);
+
+        if ($container->has('db')) {
+            $ret->singleton('db', function ($app) use ($container) {
+                return $container->get('db')->getDatabaseManager();
+            });
+        }
+
+        if ($container->has('queue')) {
+            $ret->singleton('queue', function ($app) use ($container) {
+                return $container->get('queue')->getQueueManager();
+            });
+        }
+
+        $ret->singleton('config', function ($app) {
+            return new Config();
+        });
+
+        return $ret;
+    }
+
+    protected function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-        $this->version = $version;
     }
 
     /**
@@ -121,7 +138,7 @@ class Container extends BaseContainer implements ApplicationInterface
      */
     public function detectEnvironment(Closure $callback)
     {
-        return $this->container->get('app_mode');
+        throw new BadMethodCallException('Method detectEnvironment is not implemented.');
     }
 
     /**
@@ -226,7 +243,7 @@ class Container extends BaseContainer implements ApplicationInterface
      */
     public function version()
     {
-        return $this->version;
+        throw new BadMethodCallException('Method version is not implemented.');
     }
 
     public function bootstrapWith(array $bootstrappers)
