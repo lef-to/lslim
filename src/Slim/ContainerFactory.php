@@ -7,6 +7,7 @@ use Slim\Views\Twig;
 use Slim\Views\TwigExtension;
 use Slim\Csrf\Guard as Csrf;
 use Slim\Flash\Messages as Flash;
+use Psr\Http\Message\ServerRequestInterface;
 use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RotatingFileHandler;
@@ -78,6 +79,17 @@ class ContainerFactory
                 return rtrim($c->get('var_dir'), DIRECTORY_SEPARATOR) . '/data';
             };
         }
+
+        $container->extend('request', function (ServerRequestInterface $request, Container $c) {
+            $uri1 = $request->getUri();
+            $uri2 = RequestUtil::makeCurrentUri($request);
+
+            if ($uri1->getScheme() != $uri2->getScheme() ||
+                $uri1->getPort() != $uri2->getPort()) {
+                return $request->withUri($uri2);
+            }
+            return $request;
+        });
 
         $container['logger'] = function (Container $c) use ($appName) {
             $logger  = new Logger($appName);
