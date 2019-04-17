@@ -63,21 +63,20 @@ class LSlimExtension extends AbstractExtension
      */
     public function urlFor($name, array $data = [], array $queryParams = [])
     {
+        /** @var \Psr\Http\Message\ServerRequestInterface $request */
         $request = $this->container->get('request');
+        /** @var \Slim\Router $router */
         $router = $this->container->get('router');
-        $path = $router->relativePathFor($name, $data, $queryParams);
+        $path = $router->pathFor($name, $data, $queryParams);
 
         if ($this->container->has('base_url')) {
             return rtrim($this->container->get('base_url'), '/') . $path;
         }
 
-        $uri = RequestUtil::makeCurrentUri($request)
+        $uri = $request->getUri()
+            ->withUserInfo('', '')
             ->withQuery('')
             ->withFragment('');
-
-        if ($uri instanceof Uri) {
-            return $uri->getBaseUrl() . $path;
-        }
 
         return rtrim((string)$uri->withPath('/'), '/') . $path;
     }
