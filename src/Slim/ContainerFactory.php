@@ -16,6 +16,8 @@ use Monolog\Formatter\LineFormatter;
 use Illuminate\Database\Capsule\Manager as Database;
 use Twig\Extension\DebugExtension as TwigDebugExtension;
 use Intervention\Image\ImageManager;
+use LSlim\Illuminate\Container as IlluminateContainer;
+use LSlim\Illuminate\QueueFactory;
 use LSlim\Twig\LSlimExtension;
 use LSlim\Validation\Validator;
 use LSlim\Mail\Mailer;
@@ -24,7 +26,7 @@ use LSlim\Util\Request as RequestUtil;
 
 class ContainerFactory
 {
-    private static function makeConfigPath(Container $c, $name)
+    public static function makeConfigPath(Container $c, $name)
     {
         return $c->get('config_dir')
             . DIRECTORY_SEPARATOR
@@ -35,7 +37,8 @@ class ContainerFactory
 
     public static function create($appName, $appMode, $configDir): Container
     {
-        $config = require $configDir . DIRECTORY_SEPARATOR . $appMode . DIRECTORY_SEPARATOR . 'container.php';
+        $config = $configDir . DIRECTORY_SEPARATOR . $appMode . DIRECTORY_SEPARATOR . 'container.php';
+        $config = (is_file($config)) ? include $config : [];
         $config['app_mode'] = $appMode;
 
         $container = new Container($config);
@@ -126,7 +129,7 @@ class ContainerFactory
         $container['view'] = function (Container $c) {
             $options = [
                 'auto_reload' => true,
-                'cache' => $c->get('cache_dir'),
+                'cache' => rtrim($c->get('cache_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'view',
                 'debug' => ($c->get('app_mode') != 'production') ? true : false
             ];
 
@@ -164,17 +167,6 @@ class ContainerFactory
             return new Flash();
         };
 
-        $container['db'] = function (Container $c) {
-            $db = new Database();
-            $config = require static::makeConfigPath($c, 'database.php');
-
-            foreach ($config as $k => $v) {
-                $db->addConnection($v, $k);
-            }
-
-            return $db;
-        };
-
         $container['validator'] = function (Container $c) {
             return new Validator($c->get('logger'));
         };
@@ -193,11 +185,52 @@ class ContainerFactory
         $container['image_manager'] = function (Container $c) {
             return new ImageManager([
                 'cache' => [
-                    'path' => rtrim($c->get('cache_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'image_manager'
+                    'path' => rtrim($c->get('cache_dir'), DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'image'
                 ]
             ]);
         };
 
         return $container;
+    }
+
+    public static function provideIlluminateContainer(Container $container)
+    {
+        if (!$container->has('laravel')) {
+            $container['laravel'] = function (Container $c) {
+                return IlluminateContainer::create($c);
+            };
+        }
+    }
+
+    public static function provideDatabase(Container $container)
+    {
+        if (!$container->has('db')) {
+            static::provideIlluminateContainer($container);
+
+            $container['db'] = function (Container $c) {
+                $db = new Database($c->get('laravel'));
+
+                $path = static::makeConfigPath($c, 'database.php');
+                $config = require $path;
+
+                foreach ($config as $k => $v) {
+                    $db->addConnection($v, $k);
+                }
+
+                return $db;
+            };
+        }
+    }
+
+    public static function provideQueue(Container $container)
+    {
+        if (!$container->has('queue')) {
+            static::provideIlluminateContainer($container);
+
+            $container['queue'] = function (Container $c) {
+                $path = static::makeConfigPath($c, 'queue.php');
+                return QueueFactory::create($c, $path);
+            };
+        }
     }
 }
