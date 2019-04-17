@@ -31,7 +31,9 @@
         "symfony/process": "^4.2",
         "intervention/image": "^2.4",
         "intervention/imagecache": "^2.3",
-        "slim/http-cache": "^0.4.0"
+        "slim/http-cache": "^0.4.0",
+        "illuminate/queue": "5.8.*",
+        "illuminate/events": "5.8.*"
     },
     "autoload": {
         "psr-4": {

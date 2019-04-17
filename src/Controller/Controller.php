@@ -4,61 +4,19 @@ namespace LSlim\Controller;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Container\ContainerInterface;
-use Psr\Log\LoggerInterface;
-use Illuminate\Database\Capsule\Manager as Database;
-use Illuminate\Database\Query\Builder as QueryBuilder;
 use Slim\Http\Response;
 use Slim\Views\Twig as View;
 use Slim\Flash\Messages as Flash;
-use Intervention\Image\ImageManager;
 use LSlim\Validation\Validator;
-use Closure;
+use LSlim\Traits\HasContainer;
 
 class Controller
 {
-    /**
-     * @var \Psr\Container\ContainerInterface
-     */
-    protected $container;
+    use HasContainer;
 
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
-    }
-
-    protected function getContainer(): ContainerInterface
-    {
-        return $this->container;
-    }
-
-    protected function getLogger(): LoggerInterface
-    {
-        return $this->container->get('logger');
-    }
-
-    protected function getFlash(): Flash
-    {
-        return $this->container->get('flash');
-    }
-
-    protected function getDatabase(): Database
-    {
-        return $this->container->get('db');
-    }
-
-    protected function getImageManager(): ImageManager
-    {
-        return $this->container->get('image_manager');
-    }
-
-    protected function table($tableName, $connectionName = 'default'): QueryBuilder
-    {
-        return $this->getDatabase()->getConnection($connectionName)->table($tableName);
-    }
-
-    protected function transaction(callable $callback, $connectionName = 'default')
-    {
-        return $this->getDatabase()->getConnection($connectionName)->transaction(Closure::fromCallable($callback));
     }
 
     /**
@@ -82,6 +40,11 @@ class Controller
             }
         }
         return $view;
+    }
+
+    protected function getFlash(): Flash
+    {
+        return $this->container->get('flash');
     }
 
     /**
