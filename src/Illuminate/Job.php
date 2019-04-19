@@ -24,11 +24,20 @@ abstract class Job
         try {
             $this->handle($args);
 
-            if (!$this->job->isDeletedOrReleased()) {
-                $this->job->delete();
+            if (!$job->isDeletedOrReleased()) {
+                $job->delete();
             }
         } catch (Exception $ex) {
-            $this->job->fail($ex);
+            $this->getLogger()->error(
+                'failed to handle job.',
+                [
+                    'name' => $this->job->getName(),
+                    'exception' => $ex
+                ]
+            );
+            if (!$job->isDeleted() && !$job->isReleased() && !$job->hasFailed()) {
+                $job->fail($ex);
+            }
         }
     }
 
