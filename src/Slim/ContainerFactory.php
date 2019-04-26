@@ -97,6 +97,9 @@ class ContainerFactory
         $container['logger'] = function (Container $c) use ($appName) {
             $logger  = new Logger($appName);
             $level = $c->has('log_level') ? $c->get('log_level') : Logger::DEBUG;
+            $permission = $c->has('log_permission') ? $c->get('log_permission') : null;
+            $lock = $c->has('log_use_lock') ? $c->has('log_use_lock') : false;
+
             $introspectionLevel = $c->has('log_introspection_level')
                 ? $c->has('log_introspection_level')
                 : Logger::DEBUG;
@@ -104,6 +107,7 @@ class ContainerFactory
             $processor = new IntrospectionProcessor($introspectionLevel);
             $logger->pushProcessor($processor);
 
+            $name = $c->get('log_dir') . DIRECTORY_SEPARATOR . $appName . '.log';
             $sapiName = php_sapi_name();
             if ($sapiName == 'cli' || $sapiName == 'cli-server') {
                 $handler = new StreamHandler('php://stderr', $level);
@@ -111,11 +115,12 @@ class ContainerFactory
                 $formatter = new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context%\n");
                 $handler->setFormatter($formatter);
                 $logger->pushHandler($handler);
+            
+                $name = $c->get('log_dir') . DIRECTORY_SEPARATOR . $appName . '_cli.log';
             }
 
-            $name = $c->get('log_dir') . DIRECTORY_SEPARATOR . $appName . '.log';
             $rotate = $c->has('log_rotate') ? $c->get('log_rorate') : 10;
-            $handler = new RotatingFileHandler($name, $rotate, $level);
+            $handler = new RotatingFileHandler($name, $rotate, $level, true, $permission, $lock);
 
             $formatter = new LineFormatter();
             $formatter->includeStacktraces(true);
