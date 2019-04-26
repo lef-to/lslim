@@ -32,9 +32,7 @@ class Pagination
             function () use ($request) {
                 $uri = $request->getUri();
                 if ($uri instanceof Uri) {
-                    return '/' . trim($uri->getBasePath(), '/')
-                        . '/'
-                        . ltrim($uri->getPath(), '/');
+                    return $uri->getBasePath() . '/' . ltrim($uri->getPath(), '/');
                 }
                 return '/' . trim($uri->getPath(), '/');
             }
