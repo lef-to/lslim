@@ -44,9 +44,11 @@ class Mailer
             Swift_DependencyContainer::getInstance()
                 ->register('mime.qpheaderencoder')
                 ->asAliasOf('mime.base64headerencoder');
-            Swift_Preferences::getInstance()
-                ->setCharset('iso-2022-jp')
-                ->setTempDir($tmpDir);
+            $pref = Swift_Preferences::getInstance()
+                ->setCharset('iso-2022-jp');
+            if (isset($tmpDir) && is_writeable($tmpDir)) {
+                $pref->setTempDir($tmpDir);
+            }
         });
     }
 
