@@ -13,7 +13,8 @@ class Request
      */
     public static function makeCurrentUri(RequestInterface $request): UriInterface
     {
-        $uri = $request->getUri();
+        $uri = $request->getUri()
+            ->withUserInfo('', '');
 
         $proto = $request->getHeaderLine('CLOUDFRONT_FORWARDED_PROTO');
         $port = '';
