@@ -26,7 +26,7 @@ class Mailer
     private $defaultFrom;
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var \Psr\Log\LoggerInterface|null
      */
     private $logger = null;
 
@@ -147,11 +147,21 @@ class Mailer
         return $ret;
     }
 
+    public function stopTransport()
+    {
+        $this->mailer->getTransport()->stop();
+    }
+
     /**
      * @return array
      */
     public function getLastFailedRecipients()
     {
         return $this->lastFailedRecipients;
+    }
+
+    public function getDefaultFromAddress()
+    {
+        return $this->defaultFrom;
     }
 }
