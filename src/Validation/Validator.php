@@ -9,6 +9,7 @@ use Psr\Log\LoggerInterface as Logger;
 use Illuminate\Support\Arr;
 use Respect\Validation\Exceptions\ValidationException;
 use Respect\Validation\Exceptions\NestedValidationException;
+use RuntimeException;
 use Exception;
 
 class Validator
@@ -109,35 +110,48 @@ class Validator
 
             $option = $rule['option'];
             $type = $option[static::OPTION_TYPE] ?? '';
+            $key = $option[static::OPTION_KEY] ?? [];
 
-            $key = $option[static::OPTION_KEY] ?? $name;
-
-            if (is_array($key)) {
-                $value = [];
-                foreach ($key as $k) {
-                    $v = null;
-                    if ($type == static::TYPE_FILE) {
-                        $v = Arr::get($files, $k, null);
-                        if ($v instanceof UploadedFileInterface && $v->getError() == UPLOAD_ERR_NO_FILE) {
-                            $v = null;
-                        }
-                        Arr::set($this->files, $k, $v);
-                    } else {
-                        $v = $this->fixValue(Arr::get($params, $k, null), $option);
-                        Arr::set($this->params, $k, $v);
-                    }
-                    $value[] = $v;
-                }
-            } else {
+            if (empty($key)) {
                 if ($type == static::TYPE_FILE) {
-                    $value = Arr::get($files, $key, null);
+                    $value = Arr::get($files, $name, null);
                     if ($value instanceof UploadedFileInterface && $value->getError() == UPLOAD_ERR_NO_FILE) {
                         $value = null;
                     }
-                    Arr::set($this->files, $key, $value);
+                    Arr::set($this->files, $name, $value);
                 } else {
-                    $value = $this->fixValue(Arr::get($params, $key, null), $option);
-                    Arr::set($this->params, $key, $value);
+                    $value = $this->fixValue(Arr::get($params, $name, null), $option);
+                    Arr::set($this->params, $name, $value);
+                }
+            } else {
+                $skip = false;
+                if (is_array($key)) {
+                    $value = [];
+                    foreach ($key as $k) {
+                        if ($this->hasError($k)) {
+                            $skip = true;
+                        } else {
+                            if (array_key_exists($k, $this->params)) {
+                                $value[] = Arr::get($this->params, $k);
+                            } elseif (array_key_exists($k, $this->files)) {
+                                $value[] = Arr::get($this->files, $k);
+                            } else {
+                                throw new RuntimeException($k . ' is not validated.');
+                            }
+                        }
+                    }
+                } else {
+                    if (array_key_exists($key, $this->params)) {
+                        $value = Arr::get($this->params, $key);
+                    } elseif (array_key_exists($k, $this->files)) {
+                        $value = Arr::get($this->files, $key);
+                    } else {
+                        throw new RuntimeException($key . ' is not validated.');
+                    }
+                }
+
+                if ($skip) {
+                    continue;
                 }
             }
 
@@ -162,8 +176,11 @@ class Validator
             } catch (Exception $ex) {
                 if ($this->logger !== null) {
                     $this->logger->error(
-                        'Failed to validate ' . $name,
-                        [ 'exception' => $ex ]
+                        'Failed to validation.',
+                        [
+                            'name' => $name,
+                            'exception' => $ex
+                        ]
                     );
                 }
                 throw $ex;
