@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Respect\Validation\Exceptions;
+namespace LSlim\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
 
