@@ -143,7 +143,7 @@ class Validator
                 } else {
                     if (array_key_exists($key, $this->params)) {
                         $value = Arr::get($this->params, $key);
-                    } elseif (array_key_exists($k, $this->files)) {
+                    } elseif (array_key_exists($key, $this->files)) {
                         $value = Arr::get($this->files, $key);
                     } else {
                         throw new RuntimeException($key . ' is not validated.');
