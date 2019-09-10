@@ -98,8 +98,7 @@ class DatabaseHandler implements SessionHandlerInterface
      */
     public function gc($maxlifetime)
     {
-//        $ts = time() - $maxlifetime;
-        $ts = time();
+        $ts = time() - $maxlifetime;
         $table = $this->table();
         $list = $table->where('ts', '<', $ts)->pluck('id');
 
