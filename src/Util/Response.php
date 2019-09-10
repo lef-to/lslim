@@ -9,6 +9,7 @@ use Slim\Exception\NotFoundException;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use GuzzleHttp\Psr7\LimitStream;
 use Slim\HttpCache\CacheProvider;
+use RuntimeException;
 use finfo;
 
 class Response
@@ -63,13 +64,79 @@ class Response
         $name = null,
         $localizedName = null
     ): ResponseInterface {
-        $header = [
-            'attachment; filename="' . $name . '"'
-        ];
-
         if ($name === null) {
             $name = basename($path);
         }
+
+        $res = static::makeDownloadResponse($res, $name, $localizedName);
+        return static::withFile($req, $res, $path);
+    }
+
+    public static function withFile(ServerRequestInterface $req, ResponseInterface $res, $path): ResponseInterface
+    {
+        if (!is_file($path)) {
+            throw new NotFoundException($req, $res);
+        }
+
+        if (!$res->hasHeader('Content-Type')) {
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            $mime = $finfo->file($path);
+
+            $res = $res->withHeader('Content-Type', $mime);
+        }
+
+        $stream = new LazyOpenStream($path, 'rb');
+        $res = $res->withBody($stream);
+
+        return static::handleRangeRequest($req, $res);
+    }
+
+    public static function handleRangeRequest(ServerRequestInterface $req, ResponseInterface $res): ResponseInterface
+    {
+        $body = $res->getBody();
+        $size = $body->getSize();
+
+        $rangeHeader = $req->getHeader('Range');
+        if (!empty($rangeHeader)) {
+            list($toss, $range) = explode('=', $rangeHeader[0]);
+            list($start, $end) = explode('-', $range);
+
+            if ($size === null) {
+                throw new RuntimeException("Invalid stream size.");
+            }
+
+            if (empty($end)) {
+                $end = $size - 1;
+                $range = sprintf('%d-%d', $start, $end);
+            }
+            $length = $end - $start + 1;
+
+            if ($size != $length) {
+                $body = new LimitStream($body, $length, (int)$start);
+            }
+
+            return $res
+                ->withStatus(206, 'Partial Content')
+                ->withHeader('Content-Length', (string)$length)
+                ->withHeader('Content-Range', 'bytes ' . $range . '/' . $size)
+                ->withBody($body);
+        }
+
+        if ($size !== null && !$res->hasHeader('Content-Length')) {
+            $res = $res->withHeader('Content-Length', (string)$size);
+        }
+
+        return $res;
+    }
+
+    public static function makeDownloadResponse(
+        ResponseInterface $res,
+        $name,
+        $localizedName = null
+    ): ResponseInterface {
+        $header = [
+            'attachment; filename="' . $name . '"'
+        ];
 
         if ($localizedName) {
             $ext = pathinfo($localizedName, PATHINFO_EXTENSION);
@@ -87,58 +154,6 @@ class Response
             $res = $res->withHeader('Content-Type', 'application/octet-stream');
         }
 
-        $res = $res
-            ->withHeader(
-                'Content-Disposition',
-                implode('; ', $header)
-            );
-
-        return static::withFile($req, $res, $path);
-    }
-
-    public static function withFile(ServerRequestInterface $req, ResponseInterface $res, $path): ResponseInterface
-    {
-        if (!is_file($path)) {
-            throw new NotFoundException($req, $res);
-        }
-
-        if (!$res->hasHeader('Content-Type')) {
-            $finfo = new finfo(FILEINFO_MIME_TYPE);
-            $mime = $finfo->file($path);
-
-            $res = $res->withHeader('Content-Type', $mime);
-        }
-
-        $rangeHeader = $req->getHeader('Range');
-        if (!empty($rangeHeader)) {
-            list($toss, $range) = explode('=', $rangeHeader[0]);
-            list($start, $end) = explode('-', $range);
-
-            $filesize = filesize($path);
-            if (empty($end)) {
-                $end = $filesize - 1;
-                $range = sprintf('%d-%d', $start, $end);
-            }
-            $length = $end - $start + 1;
-
-            $body = new LazyOpenStream($path, 'rb');
-            if ($filesize != $length) {
-                $body = new LimitStream($body, $length, (int)$start);
-            }
-
-            return $res
-                ->withStatus(206, 'Partial Content')
-                ->withHeader('Content-Length', (string)$length)
-                ->withHeader('Content-Range', 'bytes ' . $range . '/' . $filesize)
-                ->withBody($body);
-        }
-
-        if ($res->hasHeader('Content-Length')) {
-            $res = $res->withHeader('Content-Length', (string)filesize($path));
-        }
-
-        $stream = new LazyOpenStream($path, 'rb');
-        return $res
-            ->withBody($stream);
+        return $res->withHeader('Content-Disposition', implode('; ', $header));
     }
 }
