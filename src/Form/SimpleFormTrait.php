@@ -39,7 +39,8 @@ trait SimpleFormTrait
                 }
 
                 return $this->render($res, $tmplatePrefix . 'complete', $data);
-            }
+            },
+            $formName
         );
     }
 }
