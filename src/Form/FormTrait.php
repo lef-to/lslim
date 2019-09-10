@@ -2,10 +2,9 @@
 declare(strict_types=1);
 namespace LSlim\Form;
 
-use Psr\Log\LoggerInterface;
+use Psr\Http\Message\ServerRequestInterface as RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Slim\Http\Request;
-use Slim\Http\Response;
+use Psr\Log\LoggerInterface;
 use Slim\Http\Uri;
 use Slim\Exception\SlimException;
 use Slim\Flash\Messages as Flash;
@@ -17,8 +16,8 @@ trait FormTrait
     abstract protected function getFlash(): Flash;
 
     protected function processForm(
-        Request $req,
-        Response $res,
+        RequestInterface $req,
+        ResponseInterface $res,
         array $data,
         callable $action,
         $formName = null
@@ -37,7 +36,8 @@ trait FormTrait
             $data[Option::PHASE_NAME] = '__form_phase';
         }
 
-        if ($req->isPost()) {
+        if (strtoupper($req->getMethod()) == 'POST') {
+            $body = $req->getParsedBody();
             if (!isset($_SESSION[$sessionKey])) {
                 $_SESSION[$sessionKey] = [];
             }
@@ -46,7 +46,7 @@ trait FormTrait
                 $data[Option::BACK_NAME] = '__form_back';
             }
 
-            $phase = $req->getParsedBodyParam($data[Option::PHASE_NAME], '');
+            $phase = $body[$data[Option::PHASE_NAME]] ?? '';
             if ($phase == 'confirm' || $phase === '') {
                 $validator = $data[Option::VALIDATOR] ?? null;
                 if (is_callable($validator)) {
@@ -94,15 +94,14 @@ trait FormTrait
                 if ($phase == 'confirmed') {
                     $input = $_SESSION[$sessionKey][$formName] ?? null;
 
-                    if ($req->getParsedBodyParam($data[Option::BACK_NAME], null) !== null) {
+                    if (isset($body[$data[Option::BACK_NAME]]) || $input === null) {
                         if ($input !== null) {
                             unset($_SESSION[$sessionKey][$formName]);
                             $this->getFlash()->addMessage($formName, $input);
                         }
-                        return $res->withRedirect($req->getUri());
-                    }
-                    if ($input === null) {
-                        return $res->withRedirect($req->getUri());
+
+                        return $res->withHeader('Location', (string)$req->getUri())
+                            ->withStatus(302);
                     }
 
                     $data[Option::INPUT] = $input;

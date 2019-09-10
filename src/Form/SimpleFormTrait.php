@@ -2,9 +2,8 @@
 declare(strict_types=1);
 namespace LSlim\Form;
 
+use Psr\Http\Message\ServerRequestInterface as RequestInterface;
 use Psr\Http\Message\ResponseInterface;
-use Slim\Http\Request;
-use Slim\Http\Response;
 
 trait SimpleFormTrait
 {
@@ -13,8 +12,8 @@ trait SimpleFormTrait
     abstract protected function render(ResponseInterface $res, $name, array $data = []): ResponseInterface;
 
     protected function processSimpleForm(
-        Request $req,
-        Response $res,
+        RequestInterface $req,
+        ResponseInterface $res,
         array $data,
         $tmplatePrefix,
         callable $action,
@@ -24,7 +23,7 @@ trait SimpleFormTrait
             $req,
             $res,
             $data,
-            function (Response $res, array $data, $phase) use ($tmplatePrefix, $action) {
+            function (ResponseInterface $res, array $data, $phase) use ($tmplatePrefix, $action) {
                 if ($phase == Phase::INPUT) {
                     return $this->render($res, $tmplatePrefix . 'input', $data);
                 }
