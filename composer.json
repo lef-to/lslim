@@ -32,7 +32,8 @@
         "intervention/imagecache": "^2.3",
         "slim/http-cache": "^0.4.0",
         "illuminate/queue": "5.8.*",
-        "illuminate/events": "5.8.*"
+        "illuminate/events": "5.8.*",
+        "vlucas/phpdotenv": "^3.6"
     },
     "autoload": {
         "psr-4": {
