@@ -7,6 +7,7 @@ use Illuminate\Filesystem\Filesystem;
 use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use RuntimeException;
+use finfo;
 
 class UploadedFileManager extends UploadedFileManagerBase
 {
@@ -79,6 +80,31 @@ class UploadedFileManager extends UploadedFileManagerBase
     {
         $path = $this->getPath($name);
         return $path && is_file($path);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getFileContentType($name)
+    {
+        $path = $this->getPath($name);
+        if ($path && is_file($path)) {
+            $finfo = new finfo(FILEINFO_MIME_TYPE);
+            return $finfo->file($path);
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function getFileSize($name)
+    {
+        $path = $this->getPath($name);
+        if ($path && is_file($path)) {
+            return filesize($path);
+        }
+        return null;
     }
 
     // /**

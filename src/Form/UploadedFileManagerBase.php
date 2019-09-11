@@ -3,6 +3,7 @@ declare(strict_types=1);
 namespace LSlim\Form;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use Psr\Http\Message\StreamInterface;
 use Illuminate\Support\Arr;
@@ -60,11 +61,42 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
      */
     public function getStream($name): ?StreamInterface
     {
-        if ($this->willBeDeleted($name)) {
-            return null;
+        if ($this->has($name)) {
+            return $this->getFileStream($name);
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function makeResponse(ResponseInterface $res, $name): ResponseInterface
+    {
+        $stream = $this->getStream($name);
+        if ($stream !== null) {
+            $res = $res
+                ->withBody($this->getStream($name));
+
+            $type = $this->getFileContentType($name);
+            $res = $res->withHeader(
+                'Content-Type',
+                ($type !== null && $type !== '')
+                    ? $type
+                    : 'appliation/octet-stream'
+            );
+
+            $size = $this->getFileSize($name);
+            if ($size === null) {
+                $size = $stream->getSize();
+            }
+            if ($size !== null) {
+                $res = $res->withHeader('Content-Length', (string)$size);
+            }
+
+            return $res;
         }
 
-        return $this->getFileStream($name);
+        return $res->withStatus(404);
     }
 
     /**
@@ -139,6 +171,18 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
 
         return $v === '';
     }
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    abstract protected function getFileContentType($name);
+
+    /**
+     * @param string $name
+     * @return int|null
+     */
+    abstract protected function getFileSize($name);
 
     /**
      * @param string $name

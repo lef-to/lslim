@@ -3,10 +3,17 @@ declare(strict_types=1);
 namespace LSlim\Form;
 
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 interface UploadedFileManagerInterface
 {
+    /**
+     * @param string $name
+     * @return \Psr\Http\Message\ResponseInterface
+     */
+    public function makeResponse(ResponseInterface $res, $name): ResponseInterface;
+
     /**
      * @param string $name
      * @return \Psr\Http\Message\StreamInterface|null
