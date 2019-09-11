@@ -30,6 +30,7 @@ trait FormTrait
         }
 
         $sessionKey = $data[Option::SESSION_KEY] ?? '__form';
+        /** @var \LSlim\Form\UploadedFileManagerInterface $fileManager */
         $fileManager = $data[Option::UPLOADED] ?? null;
 
         if (!isset($data[Option::PHASE_NAME])) {
