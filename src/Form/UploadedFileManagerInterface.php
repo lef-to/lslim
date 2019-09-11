@@ -12,7 +12,7 @@ interface UploadedFileManagerInterface
      * @param string $name
      * @return \Psr\Http\Message\ResponseInterface
      */
-    public function makeResponse(ResponseInterface $res, $name): ResponseInterface;
+    public function makeResponseWithFile(ResponseInterface $res, $name): ResponseInterface;
 
     /**
      * @param string $name

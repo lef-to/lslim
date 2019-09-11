@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace LSlim\Form;
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UploadedFileInterface;
 use Illuminate\Filesystem\Filesystem;
 use Psr\Http\Message\StreamInterface;
@@ -41,16 +42,39 @@ class UploadedFileManager extends UploadedFileManagerBase
         return $this->uploadDir . DIRECTORY_SEPARATOR . trim((string)$name, DIRECTORY_SEPARATOR);
     }
 
+    protected function makeStream($path): ?StreamInterface
+    {
+        if ($path && is_file($path)) {
+            return new LazyOpenStream($path, "rb");
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function buildFileResponse(ResponseInterface $res, $name): ResponseInterface
+    {
+        $path = $this->getPath($name);
+        $stream = $this->makeStream($path);
+        if ($stream === null) {
+            return $res->withStatus(404);
+        }
+
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        return $res
+            ->withBody($stream)
+            ->withHeader('Content-Type', $finfo->file($path))
+            ->withHeader('Content-Length', (string)filesize($path));
+    }
+
     /**
      * {@inheritdoc}
      */
     protected function getFileStream($name): ?StreamInterface
     {
         $path = $this->getPath($name);
-        if ($path && is_file($path)) {
-            return new LazyOpenStream($path, "rb");
-        }
-        return null;
+        return $this->makeStream($path);
     }
 
     /**
@@ -80,31 +104,6 @@ class UploadedFileManager extends UploadedFileManagerBase
     {
         $path = $this->getPath($name);
         return $path && is_file($path);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getFileContentType($name)
-    {
-        $path = $this->getPath($name);
-        if ($path && is_file($path)) {
-            $finfo = new finfo(FILEINFO_MIME_TYPE);
-            return $finfo->file($path);
-        }
-        return null;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    protected function getFileSize($name)
-    {
-        $path = $this->getPath($name);
-        if ($path && is_file($path)) {
-            return filesize($path);
-        }
-        return null;
     }
 
     // /**

@@ -61,42 +61,21 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
      */
     public function getStream($name): ?StreamInterface
     {
-        if ($this->has($name)) {
-            return $this->getFileStream($name);
+        if ($this->willBeDeleted($name)) {
+            return null;
         }
-        return null;
+        return $this->getFileStream($name);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function makeResponse(ResponseInterface $res, $name): ResponseInterface
+    public function makeResponseWithFile(ResponseInterface $res, $name): ResponseInterface
     {
-        $stream = $this->getStream($name);
-        if ($stream !== null) {
-            $res = $res
-                ->withBody($this->getStream($name));
-
-            $type = $this->getFileContentType($name);
-            $res = $res->withHeader(
-                'Content-Type',
-                ($type !== null && $type !== '')
-                    ? $type
-                    : 'appliation/octet-stream'
-            );
-
-            $size = $this->getFileSize($name);
-            if ($size === null) {
-                $size = $stream->getSize();
-            }
-            if ($size !== null) {
-                $res = $res->withHeader('Content-Length', (string)$size);
-            }
-
-            return $res;
+        if ($this->willBeDeleted($name)) {
+            return $res->withStatus(404);
         }
-
-        return $res->withStatus(404);
+        return $this->buildFileResponse($res, $name);
     }
 
     /**
@@ -173,16 +152,9 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
     }
 
     /**
-     * @param string $name
-     * @return string|null
+     * {@inheritdoc}
      */
-    abstract protected function getFileContentType($name);
-
-    /**
-     * @param string $name
-     * @return int|null
-     */
-    abstract protected function getFileSize($name);
+    abstract protected function buildFileResponse(ResponseInterface $res, $name): ResponseInterface;
 
     /**
      * @param string $name
