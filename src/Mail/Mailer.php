@@ -12,6 +12,7 @@ use Swift_Plugins_Loggers_ArrayLogger;
 use Swift_Message;
 use Swift_Mime_ContentEncoder_PlainContentEncoder as PlainContentEncoder;
 use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
 
 class Mailer
 {
@@ -34,23 +35,6 @@ class Mailer
      * @var array
      */
     private $lastFailedRecipients;
-
-    /**
-     * @param string $tmpDir
-     */
-    public static function init($tmpDir)
-    {
-        Swift::init(function () use ($tmpDir) {
-            Swift_DependencyContainer::getInstance()
-                ->register('mime.qpheaderencoder')
-                ->asAliasOf('mime.base64headerencoder');
-            $pref = Swift_Preferences::getInstance()
-                ->setCharset('iso-2022-jp');
-            if (isset($tmpDir) && is_writeable($tmpDir)) {
-                $pref->setTempDir($tmpDir);
-            }
-        });
-    }
 
     /**
      * constructor
@@ -99,13 +83,18 @@ class Mailer
      * @param array|string|null $from
      * @return \Swift_Message
      */
-    public function create($subject, $to = null, $from = null)
+    public function create($subject, $to = null, $from = null, $charset = 'iso-2022-jp')
     {
+        static::setCharset($charset);
+
         $message = (new Swift_Message())
-            ->setCharset('iso-2022-jp')
-            ->setEncoder(new PlainContentEncoder('7bit'))
+            ->setCharset($charset)
             ->setMaxLineLength(0)
             ->setSubject($subject);
+
+        if ($charset == "iso-2022-jp") {
+            $message->setEncoder(new PlainContentEncoder('7bit'));
+        }
 
         if (!is_null($to)) {
             $message->setTo($to);
@@ -163,5 +152,31 @@ class Mailer
     public function getDefaultFromAddress()
     {
         return $this->defaultFrom;
+    }
+
+    private static function setCharset($charset)
+    {
+        $container = Swift_DependencyContainer::getInstance();
+        $currentCharset = $container->lookup('properties.charset');
+
+        if (strcasecmp($charset, $currentCharset) === 0) {
+            return;
+        }
+
+        if ($charset == 'iso-2022-jp') {
+            $container
+                ->register('mime.qpheaderencoder')
+                ->asAliasOf('mime.base64headerencoder');
+        } elseif ($charset == 'utf-8') {
+            $container
+                ->register('mime.qpheaderencoder')
+                ->asNewInstanceOf('Swift_Mime_HeaderEncoder_QpHeaderEncoder')
+                ->withDependencies(array('mime.charstream'));
+        } else {
+            throw new InvalidArgumentException("Unsupported charset: " . $charset);
+        }
+
+        $preference = Swift_Preferences::getInstance();
+        $preference->setCharset($charset);
     }
 }
