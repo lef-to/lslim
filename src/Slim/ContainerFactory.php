@@ -20,7 +20,7 @@ use LSlim\Illuminate\Container as IlluminateContainer;
 use LSlim\Illuminate\QueueFactory;
 use LSlim\Twig\LSlimExtension;
 use LSlim\Validation\Validator;
-use LSlim\Mail\Mailer;
+use LSlim\Mail\MailerFactory;
 use LSlim\Middleware\Pagination;
 use LSlim\Util\Request as RequestUtil;
 
@@ -115,7 +115,7 @@ class ContainerFactory
                 $formatter = new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context%\n");
                 $handler->setFormatter($formatter);
                 $logger->pushHandler($handler);
-            
+
                 $name = $c->get('log_dir') . DIRECTORY_SEPARATOR . $appName . '_cli.log';
             }
 
@@ -141,13 +141,13 @@ class ContainerFactory
             $path = $c->get('app_dir') . DIRECTORY_SEPARATOR . 'templates';
             $view = new Twig($path, $options);
 
-            $view->addExtension(new TwigDebugExtension());
+            $view->getEnvironment()->addExtension(new TwigDebugExtension());
 
             $router = $c->get('router');
             $uri = $c->get('request')->getUri();
 
-            $view->addExtension(new TwigExtension($router, $uri));
-            $view->addExtension(new LSlimExtension($c));
+            $view->getEnvironment()->addExtension(new TwigExtension($router, $uri));
+            $view->getEnvironment()->addExtension(new LSlimExtension($c));
 
             return $view;
         };
@@ -176,11 +176,9 @@ class ContainerFactory
             return new Validator($c->get('logger'));
         };
 
-        $container['mailer'] = function (Container $c) {
-            Mailer::init($c->get('tmp_dir'));
-
+        $container['mailer_factory'] = function (Container $c) {
             $config = require static::makeConfigPath($c, 'mailer.php');
-            return new Mailer($config, $c->get('logger'));
+            return new MailerFactory($config, $c->get('logger'));
         };
 
         $container['paginator'] = function (Container $c) {

@@ -8,6 +8,7 @@ use Illuminate\Database\Capsule\Manager as Database;
 use Illuminate\Queue\Capsule\Manager as Queue;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Intervention\Image\ImageManager;
+use LSlim\Mail\MailerFactory;
 use Closure;
 
 trait HasContainer
@@ -40,6 +41,11 @@ trait HasContainer
     protected function getImageManager(): ImageManager
     {
         return $this->container->get('image_manager');
+    }
+
+    protected function getMailerFactory(): MailerFactory
+    {
+        return $this->container->get('mailer_factory');
     }
 
     protected function table($tableName, $connectionName = 'default'): QueryBuilder
