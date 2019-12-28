@@ -4,15 +4,14 @@ namespace LSlim\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class ContentTypeNoSniff
+class ContentTypeNoSniff implements MiddlewareInterface
 {
-    public function __invoke(
-        ServerRequestInterface $request,
-        ResponseInterface $response,
-        callable $next
-    ): ResponseInterface {
-        $response = $next($request, $response);
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        $response = $handler->handle($request);
 
         if (!$response->hasHeader('X-Content-Type-Options')) {
             $response = $response->withHeader('X-Content-Type-Options', 'nosniff');

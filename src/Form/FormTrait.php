@@ -5,71 +5,70 @@ namespace LSlim\Form;
 use Psr\Http\Message\ServerRequestInterface as RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
-use Slim\Http\Uri;
-use Slim\Exception\SlimException;
-use Slim\Flash\Messages as Flash;
 use Exception;
 
 trait FormTrait
 {
+    /**
+     * @var array
+     */
+    protected $data = [];
+
     abstract protected function getLogger(): LoggerInterface;
-    abstract protected function getFlash(): Flash;
 
     protected function processForm(
-        RequestInterface $req,
-        ResponseInterface $res,
-        array $data,
+        RequestInterface $request,
+        ResponseInterface $response,
         callable $action,
         $formName = null
     ): ResponseInterface {
         if ($formName === null) {
-            $uri = $req->getUri();
-            $formName = ($uri instanceof Uri)
-                ? $uri->getBasePath() . "/" . $uri->getPath()
-                : $uri->getPath();
+            $uri = $request->getUri();
+            $basePath = $request->getAttribute('basePath') ?? '';
+            $formName = $basePath . $uri->getPath();
         }
 
-        $sessionKey = $data[Option::SESSION_KEY] ?? '__form';
+        $sessionKey = $this->data[Option::SESSION_KEY] ?? '__form';
         /** @var \LSlim\Form\UploadedFileManagerInterface $fileManager */
-        $fileManager = $data[Option::UPLOADED] ?? null;
+        $fileManager = $this->data[Option::UPLOADED] ?? null;
 
-        if (!isset($data[Option::PHASE_NAME])) {
-            $data[Option::PHASE_NAME] = '__form_phase';
+        if (!isset($this->data[Option::PHASE_NAME])) {
+            $this->data[Option::PHASE_NAME] = '__form_phase';
         }
 
-        if (strtoupper($req->getMethod()) == 'POST') {
-            $body = $req->getParsedBody();
+        if ($request->getMethod() === 'POST') {
+            $body = (array)$request->getParsedBody();
             if (!isset($_SESSION[$sessionKey])) {
                 $_SESSION[$sessionKey] = [];
             }
 
-            if (!isset($data[Option::BACK_NAME])) {
-                $data[Option::BACK_NAME] = '__form_back';
+            if (!isset($this->data[Option::BACK_NAME])) {
+                $this->data[Option::BACK_NAME] = '__form_back';
             }
 
-            $phase = $body[$data[Option::PHASE_NAME]] ?? '';
-            if ($phase == 'confirm' || $phase === '') {
-                $validator = $data[Option::VALIDATOR] ?? null;
+            $phase = $body[$this->data[Option::PHASE_NAME]] ?? '';
+            if ($phase === 'confirm' || $phase === '') {
+                $validator = $this->data[Option::VALIDATOR] ?? null;
                 if (is_callable($validator)) {
-                    $validator = $validator($req, $data);
-                    $data[Option::VALIDATOR] = $validator;
+                    $validator = $validator($request);
+                    $this->data[Option::VALIDATOR] = $validator;
                 }
 
                 if ($validator !== null) {
-                    $validator->validateRequest($req);
-                    $data[Option::INPUT] = $validator->getParams();
+                    $validator->validateRequest($request);
+                    $this->data[Option::INPUT] = $validator->getParams();
 
                     if ($fileManager !== null) {
                         $files = $validator->getFiles();
                         foreach ($files as $k => $file) {
-                            $fileManager->save($req, $k, $file);
+                            $fileManager->save($request, $k, $file);
                         }
                     }
 
                     if ($validator->isValid()) {
                         if ($phase == 'confirm') {
-                            $_SESSION[$sessionKey][$formName] = $data[Option::INPUT];
-                            return $action($res, $data, Phase::CONFIRM);
+                            $_SESSION[$sessionKey][$formName] = [ 'input' => $this->data[Option::INPUT] ];
+                            return $action($response, Phase::CONFIRM);
                         }
                     } else {
                         $this->getLogger()->notice(
@@ -80,67 +79,70 @@ trait FormTrait
                                 }, $validator->getErrors())
                             ]
                         );
-                        return $action($res, $data, Phase::INPUT);
+
+                        return $action($response, Phase::INPUT);
                     }
                 } else {
-                    $data[Option::INPUT] = [];
+                    $this->data[Option::INPUT] = [];
                     if ($phase == 'confirm') {
                         $_SESSION[$sessionKey][$formName] = [];
-                        return $action($res, $data, Phase::CONFIRM);
+                        return $action($response, Phase::CONFIRM);
                     }
                 }
             }
 
             if ($phase == 'confirmed' || $phase === '') {
                 if ($phase == 'confirmed') {
-                    $input = $_SESSION[$sessionKey][$formName] ?? null;
+                    $input = isset($_SESSION[$sessionKey][$formName]['input'])
+                        ? $_SESSION[$sessionKey][$formName]['input']
+                        : null;
 
-                    if (isset($body[$data[Option::BACK_NAME]]) || $input === null) {
+                    if (isset($body[$this->data[Option::BACK_NAME]]) || $input === null) {
+                        unset($_SESSION[$sessionKey][$formName]);
                         if ($input !== null) {
-                            unset($_SESSION[$sessionKey][$formName]);
-                            $this->getFlash()->addMessage($formName, $input);
+                            $_SESSION[$sessionKey][$formName] = [ 'flash' => $input ];
                         }
 
-                        return $res->withHeader('Location', (string)$req->getUri())
+                        return $response
+                            ->withHeader('Location', (string)$request->getUri())
                             ->withStatus(302);
                     }
 
-                    $data[Option::INPUT] = $input;
+                    $this->data[Option::INPUT] = $input;
                 }
 
                 try {
-                    $res = $action($res, $data, Phase::COMPLETE);
+                    $res = $action($response, Phase::COMPLETE);
                     if ($fileManager !== null) {
                         $fileManager->clear();
                     }
                     return $res;
-                } catch (SlimException $ex) {
-                    if ($fileManager !== null) {
-                        $fileManager->clear();
-                    }
-                    throw $ex;
                 } catch (Exception $ex) {
                     $this->getLogger()->error(
                         $formName . ' :process error.',
                         [ 'exception' => $ex ]
                     );
-                    $data[Option::EXCEPTION] = $ex;
+
+                    $this->data[Option::EXCEPTION] = $ex;
 
                     if ($phase === 'confirmed') {
-                        return $action($res, $data, Phase::CONFIRM);
+                        return $action($response, Phase::CONFIRM);
                     }
 
-                    return $action($res, $data, Phase::INPUT);
+                    return $action($response, Phase::INPUT);
                 }
             }
         } else {
+            $input = (isset($_SESSION[$sessionKey][$formName]['flash']))
+                ? $_SESSION[$sessionKey][$formName]['flash']
+                : null;
+
             if (isset($_SESSION[$sessionKey][$formName])) {
                 unset($_SESSION[$sessionKey][$formName]);
             }
 
-            $input = $this->getFlash()->getFirstMessage($formName);
             if ($input !== null) {
-                $data[Option::INPUT] = $input;
+                $this->data[Option::INPUT] = $input;
             } else {
                 if ($fileManager) {
                     $fileManager->clear();
@@ -148,6 +150,6 @@ trait FormTrait
             }
         }
 
-        return $action($res, $data, Phase::INPUT);
+        return $action($res, Phase::INPUT);
     }
 }

@@ -12,18 +12,18 @@ class MailerFactory
     private $config;
 
     /**
-     * @var \Psr\Log\LoggerInterface
+     * @var \Psr\Log\LoggerInterface|null
      */
     private $logger;
 
-    public function __construct(array $config, LoggerInterface $logger)
+    public function __construct(array $config, ?LoggerInterface $logger)
     {
         $this->config = $config;
         $this->logger = $logger;
     }
 
-    public function create(): Mailer
+    public function create($charset = 'iso-2022-jp'): Mailer
     {
-        return new Mailer($this->config, $this->logger);
+        return new Mailer($charset, $this->config, $this->logger);
     }
 }

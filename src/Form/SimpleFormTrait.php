@@ -9,35 +9,33 @@ trait SimpleFormTrait
 {
     use FormTrait;
 
-    abstract protected function render(ResponseInterface $res, $name, array $data = []): ResponseInterface;
+    abstract protected function renderResponse(ResponseInterface $response, $name, array $data = []);
 
     protected function processSimpleForm(
-        RequestInterface $req,
-        ResponseInterface $res,
-        array $data,
-        $tmplatePrefix,
+        RequestInterface $request,
+        ResponseInterface $response,
+        $templatePrefix,
         callable $action,
         $formName = null
     ): ResponseInterface {
         return $this->processForm(
-            $req,
-            $res,
-            $data,
-            function (ResponseInterface $res, array $data, $phase) use ($tmplatePrefix, $action) {
+            $request,
+            $response,
+            function (ResponseInterface $res, $phase) use ($action, $templatePrefix) {
                 if ($phase == Phase::INPUT) {
-                    return $this->render($res, $tmplatePrefix . 'input', $data);
+                    return $this->renderResponse($res, $templatePrefix . 'input', $this->data);
                 }
 
                 if ($phase == Phase::CONFIRM) {
-                    return $this->render($res, $tmplatePrefix . 'confirm', $data);
+                    return $this->renderResponse($res, $templatePrefix . 'confirm', $this->data);
                 }
 
-                $result = $action($res, $data);
+                $result = $action($res);
                 if ($result instanceof ResponseInterface) {
                     return $result;
                 }
 
-                return $this->render($res, $tmplatePrefix . 'complete', $data);
+                return $this->renderResponse($res, $templatePrefix . 'complete', $this->data);
             },
             $formName
         );

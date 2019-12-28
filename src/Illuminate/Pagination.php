@@ -1,39 +1,24 @@
 <?php
 declare(strict_types=1);
-namespace LSlim\Middleware;
+namespace LSlim\Illuminate;
 
-use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\ResponseInterface;
-use Slim\Http\Uri;
 use Illuminate\Pagination\Paginator;
+use Slim\Views\Twig as View;
 
 class Pagination
 {
-    /**
-     * @var \Psr\Container\ContainerInterface
-     */
-    private $container;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
-
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
+    public static function setup(ServerRequestInterface $request, View $view)
     {
         Paginator::viewFactoryResolver(
-            function () {
-                return new Pagination\ViewFactory($this->container->get('view'));
+            function () use ($view) {
+                return new Pagination\ViewFactory($view);
             }
         );
 
         Paginator::currentPathResolver(
             function () use ($request) {
                 $uri = $request->getUri();
-                if ($uri instanceof Uri) {
-                    return $uri->getBasePath() . '/' . ltrim($uri->getPath(), '/');
-                }
                 return '/' . trim($uri->getPath(), '/');
             }
         );
@@ -49,7 +34,5 @@ class Pagination
                 return 1;
             }
         );
-
-        return $next($request, $response);
     }
 }

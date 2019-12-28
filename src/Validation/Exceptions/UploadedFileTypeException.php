@@ -11,7 +11,7 @@ class UploadedFileTypeException extends ValidationException
             self::STANDARD => 'File type is wrong.',
         ],
         self::MODE_NEGATIVE => [
-            self::STANDARD => 'File type is wrong.',
+            self::STANDARD => 'File type is correct.',
         ],
     ];
 }

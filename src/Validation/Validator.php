@@ -70,7 +70,7 @@ class Validator
                 return $this->fixValue($v, $option);
             }, $value);
         }
-      
+
         if ($trim && $value !== null) {
             $value = trim($value);
         }

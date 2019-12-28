@@ -2,7 +2,6 @@
 declare(strict_types=1);
 namespace LSlim\Illuminate;
 
-use Psr\Container\ContainerInterface;
 use Illuminate\Container\Container as BaseContainer;
 use Illuminate\Contracts\Foundation\Application as ApplicationInterface;
 use Illuminate\Support\Str;
@@ -12,51 +11,11 @@ use BadMethodCallException;
 class Container extends BaseContainer implements ApplicationInterface
 {
     /**
-     * @var \Psr\Container\ContainerInterface
-     */
-    private $container;
-
-    /**
-     * The custom database path defined by the developer.
-     *
-     * @var string
-     */
-    protected $databasePath;
-
-    public static function create(ContainerInterface $container)
-    {
-        $ret = new static($container);
-
-        if ($container->has('db')) {
-            $ret->singleton('db', function ($app) use ($container) {
-                return $container->get('db')->getDatabaseManager();
-            });
-        }
-
-        if ($container->has('queue')) {
-            $ret->singleton('queue', function ($app) use ($container) {
-                return $container->get('queue')->getQueueManager();
-            });
-        }
-
-        $ret->singleton('config', function ($app) {
-            return new Config();
-        });
-
-        return $ret;
-    }
-
-    protected function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
-
-    /**
      * @inheritdoc
      */
-    public function basePath()
+    public function basePath($path = '')
     {
-        return $this->container->get('app_dir');
+        return $this['path.base'];
     }
 
     /**
@@ -72,7 +31,7 @@ class Container extends BaseContainer implements ApplicationInterface
      */
     public function configPath($path = '')
     {
-        return $this->container->get('config_dir') . ($path ? DIRECTORY_SEPARATOR . $path : $path);
+        return $this['path.config'];
     }
 
     /**
@@ -127,10 +86,9 @@ class Container extends BaseContainer implements ApplicationInterface
     {
         if (count($environments) > 0) {
             $patterns = is_array($environments[0]) ? $environments[0] : $environments;
-            return Str::is($patterns, $this->container->get('app_mode'));
+            return Str::is($patterns, $this['env']);
         }
-
-        return $this->container->get('app_mode');
+        return $this['env'];
     }
 
     /**
@@ -235,7 +193,7 @@ class Container extends BaseContainer implements ApplicationInterface
      */
     public function runningUnitTests()
     {
-        return false;
+        return $this['env'] === 'testing';
     }
 
     /**
@@ -252,12 +210,7 @@ class Container extends BaseContainer implements ApplicationInterface
     }
 
     /**
-     * Resolve the given type from the container.
-     *
-     * (Overriding Container::make)
-     *
-     * @param string $abstract
-     * @return mixed
+     * @inheritdoc
      */
     public function make($abstract, array $parameters = [])
     {
@@ -266,25 +219,11 @@ class Container extends BaseContainer implements ApplicationInterface
     }
 
     /**
-     * Get the path to the database directory.
-     *
-     * @param  string  $path Optionally, a path to append to the database path
-     * @return string
+     * @inheritdoc
      */
     public function databasePath($path = '')
     {
-        return ($this->databasePath ?: $this->basePath() . DIRECTORY_SEPARATOR . 'database')
-            . ($path ? DIRECTORY_SEPARATOR . $path : $path);
-    }
-
-    /**
-     * @inheritdoc
-     */
-    public function useDatabasePath($path)
-    {
-        $this->databasePath = $path;
-        $this->instance('path.database', $path);
-        return $this;
+        return $this['path.database'];
     }
 
     /**
@@ -379,7 +318,7 @@ class Container extends BaseContainer implements ApplicationInterface
      */
     public function storagePath()
     {
-        return $this->container->get('data_dir');
+        return $this['path.storage'];
     }
 
     /**

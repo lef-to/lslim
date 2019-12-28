@@ -27,6 +27,11 @@ class Mailer
     private $defaultFrom;
 
     /**
+     * @var string character set
+     */
+    private $charset;
+
+    /**
      * @var \Psr\Log\LoggerInterface|null
      */
     private $logger = null;
@@ -38,11 +43,14 @@ class Mailer
 
     /**
      * constructor
+     * @param string $charset
      * @param array $config
      * @param \Psr\Log\LoggerInterface|null $logger
      */
-    public function __construct(array $config, LoggerInterface $logger = null)
+    public function __construct($charset, array $config, LoggerInterface $logger = null)
     {
+        $this->charset = $charset;
+
         $transport = new Swift_SmtpTransport(
             $config['host'],
             $config['port'],
@@ -83,8 +91,9 @@ class Mailer
      * @param array|string|null $from
      * @return \Swift_Message
      */
-    public function create($subject, $to = null, $from = null, $charset = 'iso-2022-jp')
+    public function create($subject, $to = null, $from = null)
     {
+        $charset = $this->charset;
         static::setCharset($charset);
 
         $message = (new Swift_Message())
@@ -171,7 +180,7 @@ class Mailer
             $container
                 ->register('mime.qpheaderencoder')
                 ->asNewInstanceOf('Swift_Mime_HeaderEncoder_QpHeaderEncoder')
-                ->withDependencies(array('mime.charstream'));
+                ->withDependencies(['mime.charstream']);
         } else {
             throw new InvalidArgumentException("Unsupported charset: " . $charset);
         }

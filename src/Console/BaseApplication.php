@@ -3,9 +3,10 @@ declare(strict_types=1);
 namespace LSlim\Console;
 
 use Psr\Container\ContainerInterface;
-use Symfony\Component\Console\Application as BaseApplication;
+use Symfony\Component\Console\Application as Application;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Command\Command;
+use Illuminate\Cache\CacheManager;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository as Repository;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Database\Migrations\Migrator;
@@ -38,25 +39,28 @@ use Illuminate\Console\Command as IlluminateCommand;
 use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Events\Dispatcher;
-use LSlim\Slim\ContainerFactory;
-use LSlim\Illuminate\CacheFactory;
 use LSlim\Console\Command\Mail\TestCommand as MailTestCommand;
-use LSlim\Console\Command\Session\DatabaseInitCommand as SessionDatabaseInitCommand;
+use LSlim\Console\Command\Session\TableCommand as SessionTableCommand;
 use LSlim\Console\Command\Queue\SupervisorCommand;
 use BadMethodCallException;
 use Exception;
 
-class Application extends BaseApplication implements ExceptionHandler
+class BaseApplication extends Application implements ExceptionHandler
 {
     /**
      * @var \Psr\Container\ContainerInterface
      */
-    private $container;
+    protected $container;
 
     /**
      * @var \LSlim\Illuminate\Container
      */
-    private $laravel;
+    protected $laravel;
+
+    /**
+     * @var \Illuminate\Support\Composer
+     */
+    protected $composer;
 
     /**
      * @param string $appName
@@ -70,12 +74,10 @@ class Application extends BaseApplication implements ExceptionHandler
 
         if ($container->has('laravel')) {
             $this->laravel = $this->container->get('laravel');
-            $this->laravel['lslim.container'] = $this->container;
 
-            $this->laravel->singleton('files', function ($app) {
-                return new Filesystem();
-            });
-            $composer = new Composer($this->laravel['files'], $this->container->get('app_dir'));
+            $this->laravel->instance('lslim.container', $container);
+            $this->laravel->instance('files', new Filesystem());
+            $this->composer = new Composer($this->laravel['files'], $this->laravel['path.base']);
 
             if ($container->has('db')) {
                 Schema::setFacadeApplication($this->laravel);
@@ -85,13 +87,13 @@ class Application extends BaseApplication implements ExceptionHandler
                 $repository = new Repository($resolver, 'migration');
                 $migrator = new Migrator($repository, $resolver, $this->laravel['files']);
 
-                $this->laravel->singleton('migration.creator', function ($app) {
+                $this->laravel->singleton('migration.creator', static function ($app) {
                     return new MigrationCreator($app['files']);
                 });
 
                 $this->add(new InstallCommand($repository));
                 $this->add(new MigrateCommand($migrator));
-                $this->add(new MigrateMakeCommand($this->laravel['migration.creator'], $composer));
+                $this->add(new MigrateMakeCommand($this->laravel['migration.creator'], $this->composer));
                 $this->add(new RefreshCommand());
                 $this->add(new ResetCommand($migrator));
                 $this->add(new RollbackCommand($migrator));
@@ -100,17 +102,31 @@ class Application extends BaseApplication implements ExceptionHandler
 
             if ($container->has('queue')) {
                 if (!$this->laravel->bound('cache')) {
-                    $this->laravel->singleton('cache', function ($app) {
-                        $container = $app['lslim.container'];
-                        $path = ContainerFactory::makeConfigPath($container, 'illuminate_cache.php');
-                        return CacheFactory::create($container, $path);
+                    $this->laravel->singleton('cache', static function ($app) {
+                        $c = $app->make('lslim.container');
+                        $path = $c->get('cache_dir')
+                            . DIRECTORY_SEPARATOR
+                            . 'console';
+
+                        $config = [
+                            'default' => 'file',
+                            'stores' => [
+                                'file' => [
+                                    'driver' => 'file',
+                                    'path' => $path
+                                ]
+                            ]
+                        ];
+
+                        $app->make('config')['cache'] = $config;
+                        return new CacheManager($app);
                     });
                 }
 
                 $trace = debug_backtrace();
                 $trace = end($trace);
                 $file = $trace['file'];
-                $this->laravel->singleton('queue.listener', function ($app) use ($file) {
+                $this->laravel->singleton('queue.listener', static function ($app) use ($file) {
                     $dir = dirname($file);
 
                     if (!defined('ARTISAN_BINARY')) {
@@ -120,8 +136,9 @@ class Application extends BaseApplication implements ExceptionHandler
                     return new Listener($dir);
                 });
 
-                $this->laravel->singleton(DispatcherContract::class, function ($app) {
-                    return (new Dispatcher($app))->setQueueResolver(function () use ($app) {
+                $this->laravel->singleton(DispatcherContract::class, static function ($app) {
+                    $dispatcher = new Dispatcher($app);
+                    return $dispatcher->setQueueResolver(function () use ($app) {
                         return $app['queue'];
                     });
                 });
@@ -131,11 +148,14 @@ class Application extends BaseApplication implements ExceptionHandler
                     return new Worker(
                         $app['queue'],
                         $app['events'],
-                        $this
+                        $this,
+                        function () use ($app) {
+                            return $app->isDownForMaintenance();
+                        }
                     );
                 });
 
-                $this->laravel->singleton('queue.failer', function ($app) {
+                $this->laravel->singleton('queue.failer', static function ($app) {
                     $failed = $app['config']['queue.failed'];
                     return isset($failed['table'])
                         ? new DatabaseFailedJobProvider($app['db'], $failed['database'] ?? 'default', $failed['table'])
@@ -144,18 +164,17 @@ class Application extends BaseApplication implements ExceptionHandler
                 Queue::setFacadeApplication($this->laravel);
 
                 if ($container->has('db')) {
-                    $this->add(new FailedTableCommand($this->laravel['files'], $composer));
+                    $this->add(new FailedTableCommand($this->laravel['files'], $this->composer));
                     $this->add(new FlushFailedCommand());
                     $this->add(new ForgetFailedCommand());
-
-                    $this->add(new TableCommand($this->laravel['files'], $composer));
+                    $this->add(new TableCommand($this->laravel['files'], $this->composer));
                 }
 
                 $this->add(new ListenCommand($this->laravel['queue.listener']));
                 $this->add(new ListFailedCommand());
                 $this->add(new RetryCommand());
-                $this->add(new RestartCommand());
-                $this->add(new WorkCommand($this->laravel['queue.worker']));
+                $this->add(new RestartCommand($this->laravel['cache']->store()));
+                $this->add(new WorkCommand($this->laravel['queue.worker'], $this->laravel['cache']->store()));
 
                 $this->add(new SupervisorCommand($appName, $file, $container));
             }
@@ -166,7 +185,11 @@ class Application extends BaseApplication implements ExceptionHandler
         }
 
         if ($container->has('db')) {
-            $this->add(new SessionDatabaseInitCommand());
+            $this->add(new SessionTableCommand(
+                $this->laravel['migration.creator'],
+                $this->laravel['files'],
+                $this->composer
+            ));
         }
     }
 
@@ -227,6 +250,6 @@ class Application extends BaseApplication implements ExceptionHandler
      */
     public function renderForConsole($output, Exception $e)
     {
-        $this->renderException($e, $output);
+        $this->renderThrowable($e, $output);
     }
 }

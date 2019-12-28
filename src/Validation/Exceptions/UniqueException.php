@@ -11,7 +11,7 @@ class UniqueException extends ValidationException
             self::STANDARD => '{{name}} is duplicated.',
         ],
         self::MODE_NEGATIVE => [
-            self::STANDARD => '{{name}} is duplicated.',
+            self::STANDARD => '{{name}} is not duplicated.',
         ],
     ];
 }

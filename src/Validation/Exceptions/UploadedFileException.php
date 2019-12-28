@@ -11,7 +11,7 @@ class UploadedFileException extends ValidationException
             self::STANDARD => 'Failed to upload:（{{errorCode}}）',
         ],
         self::MODE_NEGATIVE => [
-            self::STANDARD => 'Failed to upload: ({{errorCode}}）',
+            self::STANDARD => 'Succeeded to upload',
         ],
     ];
 }

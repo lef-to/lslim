@@ -4,11 +4,13 @@ namespace LSlim\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
 use SessionHandlerInterface;
 use Dflydev\FigCookies\FigResponseCookies as Cookies;
 use Dflydev\FigCookies\SetCookie;
+use Psr\Http\Server\RequestHandlerInterface;
 
-class Session
+class Session implements MiddlewareInterface
 {
     /**
      * @param string $name
@@ -18,11 +20,11 @@ class Session
     {
         session_name($name);
         if ($handler !== null) {
-            session_set_save_handler($handler);
+            session_set_save_handler($handler, false);
         }
     }
 
-    public function __invoke(ServerRequestInterface $request, ResponseInterface $response, callable $next)
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         ini_set('session.use_strict_mode', '1');
         ini_set('session.use_trans_sid', '0');
@@ -40,8 +42,7 @@ class Session
 
         session_start();
         try {
-            $response = $next($request, $response);
-        } finally {
+            $response = $handler->handle($request);
             if (session_status() == PHP_SESSION_ACTIVE) {
                 $newId = session_id();
                 if ($id != $newId) {
@@ -52,14 +53,17 @@ class Session
                             ->withValue($newId)
                             ->withPath('/')
                             ->withHttpOnly(true);
-            
+
                         $response = Cookies::set($response, $cookie);
                     }
                 }
+            }
+
+            return $response;
+        } finally {
+            if (session_status() == PHP_SESSION_ACTIVE) {
                 session_write_close();
             }
         }
-
-        return $response;
     }
 }

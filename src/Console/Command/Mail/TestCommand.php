@@ -41,7 +41,9 @@ class TestCommand extends Command
         $name = trim($this->input->getArgument('name'));
 
         $env = $this->container->get('app_mode');
-        $mailer = $this->container->get('mailer');
+        /** @var \LSlim\Mail\MailerFactory $mailerFactory */
+        $mailerFactory = $this->container->get('mailer_factory');
+        $mailer = $mailerFactory->create();
         $message = $mailer->create(
             'Test mail: ' . $this->appName . ' (' . $env . ')',
             [ $addr => $name ]

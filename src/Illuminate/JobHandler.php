@@ -6,7 +6,7 @@ use Illuminate\Queue\Jobs\Job as QueueJob;
 use LSlim\Traits\HasContainer;
 use Exception;
 
-abstract class Job
+abstract class JobHandler
 {
     use HasContainer;
 

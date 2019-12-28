@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace LSlim\Middleware\Pagination;
+namespace LSlim\Illuminate\Pagination;
 
 use Illuminate\Contracts\View\View as ViewInterface;
 use Slim\Views\Twig;
