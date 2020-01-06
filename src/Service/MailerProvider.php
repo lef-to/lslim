@@ -6,7 +6,7 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use LSlim\Mail\MailerFactory;
 
-class MailerFactoryProvider implements ServiceProviderInterface
+class MailerProvider implements ServiceProviderInterface
 {
     /**
      * @var array|null
@@ -24,7 +24,7 @@ class MailerFactoryProvider implements ServiceProviderInterface
     public function register(Container $container)
     {
         $config = $this->config;
-        $container['mailer_factory'] = static function (Container $c) use ($config) {
+        $container['mailer'] = static function (Container $c) use ($config) {
             if ($config === null) {
                 $path = rtrim($c['config_dir'], DIRECTORY_SEPARATOR)
                     . DIRECTORY_SEPARATOR
