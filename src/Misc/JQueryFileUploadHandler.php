@@ -8,7 +8,7 @@ use Psr\Http\Message\UploadedFileFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
-use LSlim\Response\JsonResponse;
+use LSlim\Response\ResponseBuilder;
 use Psr\Http\Message\UploadedFileInterface;
 use Exception;
 
@@ -22,7 +22,7 @@ class JQueryFileUploadHandler
     /**
      * @var \Psr\Http\Message\StreamFactoryInterface
      */
-    protected $streamFileFactory;
+    protected $streamFactory;
 
     /**
      * @var string
@@ -41,7 +41,7 @@ class JQueryFileUploadHandler
         ?LoggerInterface $logger = null
     ) {
         $this->uploadedFileFactory = $uploadedFileFactoryInterface;
-        $this->streamFileFactory = $streamFactoryInterface;
+        $this->streamFactory = $streamFactoryInterface;
         $this->rootPath = $rootPath;
         $this->logger = $logger;
     }
@@ -72,7 +72,10 @@ class JQueryFileUploadHandler
             return $this->executeActionWithError($request, $response, $name, $file->getError(), 400, $action);
         }
 
-        $ctx = [];
+        $start = null;
+        $end = null;
+        $size = null;
+
         $rangeHeader = $request->getHeaderLine('Content-Range');
         if (!empty($rangeHeader)) {
             $range = preg_split('/[^0-9]+/', $rangeHeader);
@@ -84,7 +87,9 @@ class JQueryFileUploadHandler
                     'Invalaid content-range header.',
                     [ 'header' => $rangeHeader]
                 );
-                return JsonResponse::create($response, [])
+                return (new ResponseBuilder($response, $this->streamFactory))
+                    ->writeJson([])
+                    ->get()
                     ->withStatus(400);
             }
 
@@ -96,18 +101,20 @@ class JQueryFileUploadHandler
                     'File size is overflowed.',
                     [ 'size' => $range[3] ]
                 );
-                return JsonResponse::create($response, [])
+                return (new ResponseBuilder($response, $this->streamFactory))
+                    ->writeJson([])
+                    ->get()
                     ->withStatus(400);
             }
 
-            $ctx['start'] = $range[1];
-            $ctx['end'] = $range[2];
-            $ctx['size'] = $range[3];
+            $start = (int)$range[1];
+            $end = (int)$range[2];
+            $size = (int)$range[3];
         }
 
-        $path = $this->makeFilePath($name, $ctx);
+        $path = $this->makeFilePath($request, $name);
 
-        if (empty($ctx)) {
+        if ($start === null) {
             try {
                 $this->moveFile($file, $path);
                 return $this->executeAction(
@@ -141,9 +148,7 @@ class JQueryFileUploadHandler
             }
         }
 
-        $start = $ctx['start'];
-
-        if ($start == 0) {
+        if ($start === 0) {
             $this->deleteFile($path);
         } else {
             $size = $this->getFileSize($path);
@@ -189,7 +194,6 @@ class JQueryFileUploadHandler
             );
         }
 
-        $size = $ctx['size'];
         $currentSize = $this->getFileSize($path);
 
         if ($size == $currentSize) {
@@ -212,13 +216,15 @@ class JQueryFileUploadHandler
             );
         }
 
-        return JsonResponse::create($response, [])
+        return (new ResponseBuilder($response, $this->streamFactory))
+            ->writeJson([])
+            ->get()
             ->withStatus(200);
     }
 
     protected function createStream($path)
     {
-        return $this->streamFileFactory->createStreamFromFile($path, "rb");
+        return $this->streamFactory->createStreamFromFile($path, "rb");
     }
 
     protected function appendFile($path, UploadedFileInterface $file)
@@ -246,7 +252,7 @@ class JQueryFileUploadHandler
         return true;
     }
 
-    protected function makeFilePath($name, array $ctx)
+    protected function makeFilePath(ServerRequestInterface $request, $name)
     {
         return rtrim($this->rootPath, DIRECTORY_SEPARATOR)
             . DIRECTORY_SEPARATOR
@@ -278,7 +284,7 @@ class JQueryFileUploadHandler
         $statusCode,
         callable $action
     ): ResponseInterface {
-        $stream = $this->streamFileFactory->createStream();
+        $stream = $this->streamFactory->createStream();
         $file = $this->uploadedFileFactory->createUploadedFile(
             $stream,
             null,
@@ -308,12 +314,15 @@ class JQueryFileUploadHandler
                 'Failed to execute action.',
                 [ 'exception' => $ex ]
             );
-
-            return JsonResponse::create($response, [])
+            return (new ResponseBuilder($response, $this->streamFactory))
+                ->writeJson([])
+                ->get()
                 ->withStatus(500);
         }
 
-        return JsonResponse::create($response, [])
+        return (new ResponseBuilder($response, $this->streamFactory))
+            ->writeJson([])
+            ->get()
             ->withStatus($statusCode);
     }
 

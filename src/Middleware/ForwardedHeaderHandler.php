@@ -17,7 +17,7 @@ class ForwardedRequestHandler implements MiddlewareInterface
     /**
      * @param bool $clearUserInfo
      */
-    public function __construct($clearUserInfo = false)
+    public function __construct($clearUserInfo = true)
     {
         $this->clearUserInfo = $clearUserInfo;
     }

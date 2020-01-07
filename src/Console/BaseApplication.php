@@ -101,28 +101,6 @@ class BaseApplication extends Application implements ExceptionHandler
             }
 
             if ($container->has('queue')) {
-                if (!$this->laravel->bound('cache')) {
-                    $this->laravel->singleton('cache', static function ($app) {
-                        $c = $app->make('lslim.container');
-                        $path = $c->get('cache_dir')
-                            . DIRECTORY_SEPARATOR
-                            . 'console';
-
-                        $config = [
-                            'default' => 'file',
-                            'stores' => [
-                                'file' => [
-                                    'driver' => 'file',
-                                    'path' => $path
-                                ]
-                            ]
-                        ];
-
-                        $app->make('config')['cache'] = $config;
-                        return new CacheManager($app);
-                    });
-                }
-
                 $trace = debug_backtrace();
                 $trace = end($trace);
                 $file = $trace['file'];

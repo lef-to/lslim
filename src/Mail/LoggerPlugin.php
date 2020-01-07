@@ -5,6 +5,7 @@ namespace LSlim\Mail;
 use gcrico\SwiftMailerPsrLoggerPlugin\SwiftMailerPsrLoggerPlugin;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Swift_Events_SendEvent;
 
 class LoggerPlugin extends SwiftMailerPsrLoggerPlugin
 {
@@ -23,9 +24,9 @@ class LoggerPlugin extends SwiftMailerPsrLoggerPlugin
      *
      * @param \Swift_Events_SendEvent $evt
      */
-    public function beforeSendPerformed(\Swift_Events_SendEvent $evt)
+    public function beforeSendPerformed(Swift_Events_SendEvent $evt)
     {
-        $this->logger->log(LogLevel::DEBUG, '[MAILER] MESSAGE (beforeSend): ', array());
+        $this->logger->log(LogLevel::DEBUG, '[MAILER] MESSAGE (beforeSend): ', []);
     }
 
     /**
@@ -33,23 +34,22 @@ class LoggerPlugin extends SwiftMailerPsrLoggerPlugin
      *
      * @param \Swift_Events_SendEvent $evt
      */
-    public function sendPerformed(\Swift_Events_SendEvent $evt)
+    public function sendPerformed(Swift_Events_SendEvent $evt)
     {
         $result = $evt->getResult();
         $failed_recipients = $evt->getFailedRecipients();
-        $message = $evt->getMessage();
 
-        if ($result === \Swift_Events_SendEvent::RESULT_SUCCESS) {
+        if ($result === Swift_Events_SendEvent::RESULT_SUCCESS) {
             $level = LogLevel::INFO;
         } else {
             $level = LogLevel::ERROR;
         }
 
         if ($level) {
-            $this->logger->log($level, '[MAILER] MESSAGE (sendPerformed): ', array(
-                             'result'            => $result,
-                             'failed_recipients' => $failed_recipients,
-            ));
+            $this->logger->log($level, '[MAILER] MESSAGE (sendPerformed): ', [
+                'result'            => $result,
+                'failed_recipients' => $failed_recipients,
+            ]);
         }
     }
 }

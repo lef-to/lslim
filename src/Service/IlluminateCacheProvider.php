@@ -6,7 +6,7 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Illuminate\Cache\CacheManager;
 
-class IlluminateCacheProvider implements  ServiceProviderInterface
+class IlluminateCacheProvider implements ServiceProviderInterface
 {
     /**
      * @var array|null

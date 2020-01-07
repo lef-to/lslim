@@ -13,6 +13,16 @@ use Psr\Http\Server\RequestHandlerInterface;
 class Session implements MiddlewareInterface
 {
     /**
+     * @var string
+     */
+    protected $path = '/';
+
+    /**
+     * @var bool
+     */
+    protected $httpOnly = true;
+
+    /**
      * @param string $name
      * @param \SessionHandlerInterface|null $handler
      */
@@ -22,6 +32,18 @@ class Session implements MiddlewareInterface
         if ($handler !== null) {
             session_set_save_handler($handler, false);
         }
+    }
+
+    public function setPath($path): self
+    {
+        $this->path = $path;
+        return $this;
+    }
+
+    public function setHttpOnly($httpOnly): self
+    {
+        $this->httpOnly = $httpOnly;
+        return $this;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -51,8 +73,8 @@ class Session implements MiddlewareInterface
                     if (is_null($cookie->getValue())) {
                         $cookie = SetCookie::create($name)
                             ->withValue($newId)
-                            ->withPath('/')
-                            ->withHttpOnly(true);
+                            ->withPath($this->path)
+                            ->withHttpOnly($this->httpOnly);
 
                         $response = Cookies::set($response, $cookie);
                     }
