@@ -9,7 +9,7 @@ trait SimpleFormTrait
 {
     use FormTrait;
 
-    abstract protected function renderResponse(ResponseInterface $response, $name, array $data = []);
+    abstract protected function render(ResponseInterface $response, $name, array $data = []);
 
     protected function processSimpleForm(
         RequestInterface $request,
@@ -23,11 +23,11 @@ trait SimpleFormTrait
             $response,
             function (ResponseInterface $res, $phase) use ($action, $templatePrefix) {
                 if ($phase == Phase::INPUT) {
-                    return $this->renderResponse($res, $templatePrefix . 'input', $this->data);
+                    return $this->render($res, $templatePrefix . 'input', $this->data);
                 }
 
                 if ($phase == Phase::CONFIRM) {
-                    return $this->renderResponse($res, $templatePrefix . 'confirm', $this->data);
+                    return $this->render($res, $templatePrefix . 'confirm', $this->data);
                 }
 
                 $result = $action($res);
@@ -35,7 +35,7 @@ trait SimpleFormTrait
                     return $result;
                 }
 
-                return $this->renderResponse($res, $templatePrefix . 'complete', $this->data);
+                return $this->render($res, $templatePrefix . 'complete', $this->data);
             },
             $formName
         );
