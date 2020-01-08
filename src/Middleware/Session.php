@@ -23,6 +23,11 @@ class Session implements MiddlewareInterface
     protected $httpOnly = true;
 
     /**
+     * @var int|string|\DateTimeInterface|null
+     */
+    protected $expires = null;
+
+    /**
      * @param string $name
      * @param \SessionHandlerInterface|null $handler
      */
@@ -43,6 +48,12 @@ class Session implements MiddlewareInterface
     public function setHttpOnly($httpOnly): self
     {
         $this->httpOnly = $httpOnly;
+        return $this;
+    }
+
+    public function setExpires($expires):  self
+    {
+        $this->expires = $expires;
         return $this;
     }
 
@@ -74,6 +85,7 @@ class Session implements MiddlewareInterface
                         $cookie = SetCookie::create($name)
                             ->withValue($newId)
                             ->withPath($this->path)
+                            ->withExpires($this->expires)
                             ->withHttpOnly($this->httpOnly);
 
                         $response = Cookies::set($response, $cookie);
