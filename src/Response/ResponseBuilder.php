@@ -131,6 +131,28 @@ class ResponseBuilder
         return $this;
     }
 
+    /*
+     * @param int|string|DateTime $time
+     */
+    public function setExpires($time): self
+    {
+        $util = $this->getUtil();
+        $this->response = $util->withExpires($this->response, $time);
+
+        return $this;
+    }
+
+    /*
+     * @param int $seconds
+     */
+    public function setRelativeExpires($seconds): self
+    {
+        $util = $this->getUtil();
+        $this->response = $util->withRelativeExpires($this->response, $seconds);
+
+        return $this;
+    }
+
     public function setAttachment($name, $localizedName): self
     {
         $disposition = [
