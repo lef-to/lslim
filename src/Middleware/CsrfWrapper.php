@@ -1,5 +1,5 @@
 <?php
-declare(stirct_types=1);
+declare(strict_types=1);
 namespace LSlim\Middleware;
 
 use Psr\Http\Message\ServerRequestInterface;
