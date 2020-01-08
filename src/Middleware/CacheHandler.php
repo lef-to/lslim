@@ -20,10 +20,10 @@ class CacheHandler implements MiddlewareInterface
      */
     protected $type;
 
-    public function __construct($maxAge = 0, $type = 'private')
+    public function __construct($type = 'no-cache', $maxAge = 0)
     {
-        $this->maxAge = $maxAge;
         $this->type = $type;
+        $this->maxAge = $maxAge;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -31,12 +31,21 @@ class CacheHandler implements MiddlewareInterface
         $response = $handler->handle($request);
         $util = new CacheUtil();
 
+        $maxAge = $this->maxAge;
         if (!$response->hasHeader('Cache-Control')) {
-            if ($this->maxAge == 0) {
-                $response = $util->withCachePrevention($response);
+            $type = $this->type;
+            if ($type == 'public') {
+                $response = $util->withCache($response, true, $maxAge);
+            } elseif ($type == 'private') {
+                $response = $util->withCache($response, false, $maxAge);
             } else {
-                $response = $util->withCache($response, $this->type == 'public', $this->maxAge);
+                $response = $util->withCachePrevention($response);
+                $maxAge = 0;
             }
+        }
+
+        if (!$response->hasHeader('Expires')) {
+            $response = $util->withRelativeExpires($response, $maxAge);
         }
 
         if ($util->isNotModified($request, $response)) {
