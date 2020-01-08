@@ -6,7 +6,9 @@ use Psr\Container\ContainerInterface;
 use Symfony\Component\Console\Application as Application;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Command\Command;
-use Illuminate\Cache\CacheManager;
+use Illuminate\Cache\Console\CacheTableCommand;
+use Illuminate\Cache\Console\ClearCommand as CacheClearCommand;
+use Illuminate\Cache\Console\ForgetCommand as CacheForgetCommand;
 use Illuminate\Database\Migrations\DatabaseMigrationRepository as Repository;
 use Illuminate\Database\Migrations\MigrationCreator;
 use Illuminate\Database\Migrations\Migrator;
@@ -79,7 +81,7 @@ class BaseApplication extends Application implements ExceptionHandler
             $this->laravel->instance('files', new Filesystem());
             $this->composer = new Composer($this->laravel['files'], $this->laravel['path.base']);
 
-            if ($container->has('db')) {
+            if ($this->laravel->bound('db')) {
                 Schema::setFacadeApplication($this->laravel);
                 DB::setFacadeApplication($this->laravel);
 
@@ -100,7 +102,13 @@ class BaseApplication extends Application implements ExceptionHandler
                 $this->add(new StatusCommand($migrator));
             }
 
-            if ($container->has('queue')) {
+            if ($this->laravel->bound('cache')) {
+                $this->add(new CacheTableCommand($this->laravel['files'], $this->composer));
+                $this->add(new CacheClearCommand($this->laravel['cache'], $this->laravel['files']));
+                $this->add(new CacheForgetCommand($this->laravel['cache']));
+            }
+
+            if ($this->laravel->bound('queue')) {
                 $trace = debug_backtrace();
                 $trace = end($trace);
                 $file = $trace['file'];
@@ -151,8 +159,11 @@ class BaseApplication extends Application implements ExceptionHandler
                 $this->add(new ListenCommand($this->laravel['queue.listener']));
                 $this->add(new ListFailedCommand());
                 $this->add(new RetryCommand());
-                $this->add(new RestartCommand($this->laravel['cache']->store()));
-                $this->add(new WorkCommand($this->laravel['queue.worker'], $this->laravel['cache']->store()));
+
+                if ($this->laravel->bound('cache')) {
+                    $this->add(new RestartCommand($this->laravel['cache']->store()));
+                    $this->add(new WorkCommand($this->laravel['queue.worker'], $this->laravel['cache']->store()));
+                }
 
                 $this->add(new SupervisorCommand($appName, $file, $container));
             }
