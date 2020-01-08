@@ -7,7 +7,6 @@ use Pimple\ServiceProviderInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
-use Slim\Csrf\Guard as Csrf;
 use LSlim\Middleware\CsrfWrapper;
 
 class CsrfProvider implements ServiceProviderInterface
@@ -34,7 +33,7 @@ class CsrfProvider implements ServiceProviderInterface
         $option = $this->option;
 
         $container['csrf'] = static function (Container $c) use ($responseFactory, $option) {
-            $csrf = new Csrf($responseFactory);
+            $csrf = new CsrfWrapper($responseFactory);
 
             if (isset($option['storage_limit'])) {
                 $csrf->setStorageLimit($option['storage_limit']);
@@ -63,7 +62,7 @@ class CsrfProvider implements ServiceProviderInterface
                 $csrf->setFailureHandler($handler);
             }
 
-            return new CsrfWrapper($csrf);
+            return $csrf;
         };
     }
 }

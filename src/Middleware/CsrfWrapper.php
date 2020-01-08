@@ -4,6 +4,7 @@ namespace LSlim\Middleware;
 
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Csrf\Guard;
@@ -11,18 +12,52 @@ use Slim\Csrf\Guard;
 class CsrfWrapper implements MiddlewareInterface
 {
     /**
-     * @var \Slim\Csrf\Guard
+     * @var \Psr\Http\Message\ResponseFactoryInterface
      */
-    protected $guard;
+    protected $responseFactory;
 
-    public function __construct(Guard $guard)
+    /**
+     * @var int|null
+     */
+    protected $storageLimit = null;
+
+    /**
+     * @var callable|null
+     */
+    protected $failureHandler = null;
+
+    public function __construct(ResponseFactoryInterface $responseFactory)
     {
-        $this->guard = $guard;
+        $this->responseFactory = $responseFactory;
+    }
+
+    public function setStorageLimit($limit): self
+    {
+        $this->storageLimit = $limit;
+        return $this;
+    }
+
+    public function setFailureHandler(callable $handler): self
+    {
+        $this->failureHandler = $handler;
+        return $this;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $request = $request->withAttribute('csrf', $this->guard);
-        return $this->guard->process($request, $handler);
+        $guard = new Guard($this->responseFactory);
+
+        $guard->setStorageLimit($this->storageLimit);
+
+        if ($this->storageLimit !== null) {
+            $guard->setStorageLimit($this->storageLimit);
+        }
+
+        if ($this->failureHandler !== null) {
+            $guard->setFailureHandler($this->failureHandler);
+        }
+
+        $request = $request->withAttribute('csrf', $guard);
+        return $guard->process($request, $handler);
     }
 }
