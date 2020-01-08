@@ -47,8 +47,6 @@ class CsrfWrapper implements MiddlewareInterface
     {
         $guard = new Guard($this->responseFactory);
 
-        $guard->setStorageLimit($this->storageLimit);
-
         if ($this->storageLimit !== null) {
             $guard->setStorageLimit($this->storageLimit);
         }
