@@ -112,11 +112,11 @@ trait FormTrait
                 }
 
                 try {
-                    $res = $action($response, Phase::COMPLETE);
+                    $response = $action($response, Phase::COMPLETE);
                     if ($fileManager !== null) {
                         $fileManager->clear();
                     }
-                    return $res;
+                    return $response;
                 } catch (Exception $ex) {
                     $this->getLogger()->error(
                         $formName . ' :process error.',
@@ -150,6 +150,6 @@ trait FormTrait
             }
         }
 
-        return $action($res, Phase::INPUT);
+        return $action($response, Phase::INPUT);
     }
 }
