@@ -46,20 +46,6 @@ class ViewExtender implements MiddlewareInterface
                 $view->getEnvironment()->addExtension(new TwigExtension());
             }
 
-            if (!isset($view['csrf'])) {
-                $csrf = $request->getAttribute('csrf');
-                if ($csrf !== null) {
-                    $view['csrf'] = [
-                        'key' => [
-                            'name'  => $csrf->getTokenNameKey(),
-                            'value' => $csrf->getTokenValueKey()
-                        ],
-                        'name'  => $csrf->getTokenName(),
-                        'value' => $csrf->getTokenValue()
-                    ];
-                }
-            }
-
             return $view;
         });
 

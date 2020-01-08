@@ -7,6 +7,7 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Slim\Views\Twig;
 use LSlim\Twig\SessionExtension;
+use Twig\Extension\DebugExtension;
 
 class TwigProvider implements ServiceProviderInterface
 {
@@ -52,13 +53,8 @@ class TwigProvider implements ServiceProviderInterface
                 $option['auto_reload'] = true;
             }
 
-            if (!isset($option['cache'])) {
-                if (isset($c['cache_dir'])) {
-                    $option['cache'] = rtrim($c['cache_dir'], DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'view';
-                } elseif (isset($c['var_dir'])) {
-                    $option['cache'] = rtrim($c['var_dir'], DIRECTORY_SEPARATOR)
-                        . DIRECTORY_SEPARATOR . 'cache' . DIRECTORY_SEPARATOR . 'view';
-                }
+            if (!isset($option['cache']) && isset($c['cache_dir'])) {
+                $option['cache'] = rtrim($c['cache_dir'], DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . 'view';
             }
 
             if (!isset($option['debug']) && isset($c['env'])) {
@@ -66,6 +62,7 @@ class TwigProvider implements ServiceProviderInterface
             }
 
             $twig = Twig::create($path, $option);
+            $twig->addExtension(new DebugExtension());
             if (session_status() === PHP_SESSION_ACTIVE) {
                 $twig->addExtension(new SessionExtension());
             }

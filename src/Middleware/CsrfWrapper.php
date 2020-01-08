@@ -26,6 +26,11 @@ class CsrfWrapper implements MiddlewareInterface
      */
     protected $failureHandler = null;
 
+    /**
+     * @var \Slim\Csrf\Guard|null
+     */
+    protected $guard = null;
+
     public function __construct(ResponseFactoryInterface $responseFactory)
     {
         $this->responseFactory = $responseFactory;
@@ -43,6 +48,11 @@ class CsrfWrapper implements MiddlewareInterface
         return $this;
     }
 
+    public function getGuard(): ?Guard
+    {
+        return $this->guard;
+    }
+
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $guard = new Guard($this->responseFactory);
@@ -54,6 +64,8 @@ class CsrfWrapper implements MiddlewareInterface
         if ($this->failureHandler !== null) {
             $guard->setFailureHandler($this->failureHandler);
         }
+
+        $this->guard = $guard;
 
         $request = $request->withAttribute('csrf', $guard);
         return $guard->process($request, $handler);
