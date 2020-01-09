@@ -4,7 +4,7 @@ namespace LSlim\Form;
 class Option
 {
     const INPUT = 'input';
-    const VALIDATOR = 'validtator';
+    const VALIDATOR = 'validator';
     const UPLOADED = 'uploaded';
     const SESSION_KEY = 'session_key';
     const PHASE_NAME = 'phase_name';
