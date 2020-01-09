@@ -164,13 +164,7 @@ class Validator
             } catch (ValidationException $ex) {
                 // ファイルの場合はバリデーションがとおらなかったものは削除する
                 if ($type == static::TYPE_FILE) {
-                    if (is_array($key)) {
-                        foreach ($key as $k) {
-                            Arr::set($this->files, $k, null);
-                        }
-                    } else {
-                        Arr::set($this->files, $key, null);
-                    }
+                    Arr::set($this->files, $name, null);
                 }
                 $this->setError($name, $ex);
             } catch (Exception $ex) {
