@@ -131,9 +131,9 @@ class Validator
                         if ($this->hasError($k)) {
                             $skip = true;
                         } else {
-                            if (array_key_exists($k, $this->params)) {
+                            if (Arr::has($this->params, $k)) {
                                 $value[] = Arr::get($this->params, $k);
-                            } elseif (array_key_exists($k, $this->files)) {
+                            } elseif (Arr::has($this->files, $k)) {
                                 $value[] = Arr::get($this->files, $k);
                             } else {
                                 throw new RuntimeException($k . ' is not validated.');
@@ -141,9 +141,9 @@ class Validator
                         }
                     }
                 } else {
-                    if (array_key_exists($key, $this->params)) {
+                    if (Arr::has($this->params, $key)) {
                         $value = Arr::get($this->params, $key);
-                    } elseif (array_key_exists($key, $this->files)) {
+                    } elseif (Arr::has($this->files, $key)) {
                         $value = Arr::get($this->files, $key);
                     } else {
                         throw new RuntimeException($key . ' is not validated.');
