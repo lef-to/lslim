@@ -41,5 +41,9 @@
         "psr-4": {
             "LSlim\\": "src"
         }
+    },
+    "require-dev": {
+        "nyholm/psr7-server": "^0.4.1",
+        "nyholm/psr7": "^1.2"
     }
 }
