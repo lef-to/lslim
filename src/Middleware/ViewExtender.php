@@ -10,7 +10,7 @@ use Pimple\Container;
 use Slim\Views\Twig as View;
 use Slim\Views\TwigExtension;
 use Slim\Views\TwigRuntimeLoader;
-use Slim\Routing\RouteContext;
+use Slim\Interfaces\RouteParserInterface;
 
 class ViewExtender implements MiddlewareInterface
 {
@@ -35,9 +35,8 @@ class ViewExtender implements MiddlewareInterface
         $basePath = $this->basePath;
         $this->container->extend('view', static function (View $view, Container $c) use ($request, $basePath) {
             if (!$view->getEnvironment()->hasExtension(TwigExtension::class)) {
-                $routeContext = RouteContext::fromRequest($request);
                 $runtimeLoader = new TwigRuntimeLoader(
-                    $routeContext->getRouteParser(),
+                    $c[RouteParserInterface::class],
                     $request->getUri(),
                     $basePath
                 );
