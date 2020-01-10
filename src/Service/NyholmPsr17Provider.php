@@ -6,7 +6,7 @@ use Pimple\ServiceProviderInterface;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7Server\ServerRequestCreator;
 use Slim\Interfaces\ServerRequestCreatorInterface;
-use Slim\Factory\Psr17\ServerRequestCreator as SlimServerRequestCreator;
+use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 
@@ -36,7 +36,19 @@ class NyholmPsr17Provider implements ServiceProviderInterface
                 $psr17Factory
             );
 
-            return new SlimServerRequestCreator($creator, 'fromGlobal');
+            return new class ($creator) implements ServerRequestCreatorInterface {
+                private $creator;
+
+                public function __construct(ServerRequestCreator $creator)
+                {
+                    $this->creator = $creator;
+                }
+
+                public function createServerRequestFromGlobals(): ServerRequestInterface
+                {
+                    return $this->creator->fromGlobals();
+                }
+            };
         };
     }
 }
