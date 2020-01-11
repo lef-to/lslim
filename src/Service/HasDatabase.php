@@ -4,6 +4,7 @@ namespace LSlim\Service;
 
 use Illuminate\Database\Capsule\Manager as Database;
 use Illuminate\Database\Query\Builder as QueryBuilder;
+use Closure;
 
 trait HasDatabase
 {
@@ -16,6 +17,9 @@ trait HasDatabase
 
     protected function transaction(callable $callback, $connectionName = 'default')
     {
-        return $this->getDatabase()->getConnection($connectionName)->transaction($callback());
+        return $this
+            ->getDatabase()
+            ->getConnection($connectionName)
+            ->transaction(Closure::fromCallable($callback));
     }
 }
