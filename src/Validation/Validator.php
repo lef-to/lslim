@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace Lslim\Validation;
+namespace LSlim\Validation;
 
 use Respect\Validation\Validator as RespectValidator;
 use Psr\Http\Message\ServerRequestInterface as Request;
