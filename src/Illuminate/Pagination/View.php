@@ -3,10 +3,11 @@ declare(strict_types=1);
 namespace LSlim\Illuminate\Pagination;
 
 use Illuminate\Contracts\View\View as ViewInterface;
+use Illuminate\Contracts\Support\Htmlable;
 use Slim\Views\Twig;
 use BadMethodCallException;
 
-class View implements ViewInterface
+class View implements ViewInterface, Htmlable
 {
     /**
      * @var \Slim\Views\Twig
@@ -22,7 +23,7 @@ class View implements ViewInterface
      * @var array
      */
     private $data;
-    
+
     /**
      * @var array
      */
@@ -66,5 +67,13 @@ class View implements ViewInterface
     public function getData()
     {
         return $this->data;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function toHtml()
+    {
+        return  $this->render();
     }
 }
