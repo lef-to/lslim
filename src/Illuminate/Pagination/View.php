@@ -76,4 +76,9 @@ class View implements ViewInterface, Htmlable
     {
         return  $this->render();
     }
+
+    public function __toString()
+    {
+        return $this->render();
+    }
 }
