@@ -8,6 +8,7 @@ use Psr\Http\Message\UploadedFileInterface;
 use Psr\Http\Message\StreamInterface;
 use Illuminate\Support\Arr;
 use Traversable;
+use InvalidArgumentException;
 
 abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
 {
@@ -106,6 +107,17 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
     /**
      * {@inheritdoc}
      */
+    public function moveTo($name, $dst)
+    {
+        if ($this->willBeDeleted($name)) {
+            throw new InvalidArgumentException($name . ' will be deleted.');
+        }
+        $this->moveFile($name, $dst);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function clear()
     {
         unset($_SESSION[$this->sessionKey][$this->resourceId]);
@@ -175,4 +187,10 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
     abstract protected function saveFile($name, UploadedFileInterface $file);
 
     abstract protected function deleteFiles();
+
+    /**
+     * @param string $name
+     * @param mixed $dst
+     */
+    abstract protected function moveFile($name, $dst);
 }

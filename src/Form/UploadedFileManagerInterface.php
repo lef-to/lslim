@@ -47,4 +47,10 @@ interface UploadedFileManagerInterface
      * @param \Psr\Http\Message\UploadedFileInterface|array|\ArrayAccess|null $file
      */
     public function save(ServerRequestInterface $req, $name, $file);
+
+    /**
+     * @param string $name
+     * @param mixed $dst
+     */
+    public function moveTo($name, $dst);
 }

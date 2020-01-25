@@ -9,6 +9,7 @@ use Psr\Http\Message\StreamInterface;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use RuntimeException;
 use finfo;
+use InvalidArgumentException;
 
 class UploadedFileManager extends UploadedFileManagerBase
 {
@@ -106,32 +107,6 @@ class UploadedFileManager extends UploadedFileManagerBase
         return $path && is_file($path);
     }
 
-    // /**
-    //  * @param string $name
-    //  * @param string $dstPath
-    //  */
-    // public function release($name, $dstPath)
-    // {
-    //     if ($this->willBeDeleted($name)) {
-    //         if ($this->fs->isFile($dstPath)) {
-    //             if (!$this->fs->delete($dstPath)) {
-    //                 throw new RuntimeException('Failed to delete ' . $dstPath);
-    //             }
-    //             return;
-    //         }
-    //     }
-
-    //     $srcPath = $this->getPath($name);
-    //     if ($srcPath && $this->fs->isFile($srcPath)) {
-    //         $dir = dirname($dstPath);
-    //         $this->makeDirectory($dir);
-
-    //         if (!$this->fs->copy($srcPath, $dstPath)) {
-    //             throw new RuntimeException('Failed to copy file to ' . $dstPath);
-    //         }
-    //     }
-    // }
-
     protected function makeDirectory($path)
     {
         if (!$this->fs->isDirectory($path)) {
@@ -140,6 +115,21 @@ class UploadedFileManager extends UploadedFileManagerBase
             if (!$this->fs->isDirectory($path)) {
                 throw new RuntimeException('Failed to make ' . $path . ' directory.');
             }
+        }
+    }
+
+    protected function moveFile($name, $dstPath)
+    {
+        $srcPath = $this->getPath($name);
+        if ($srcPath && $this->fs->isFile($srcPath)) {
+            $dir = dirname($dstPath);
+            $this->makeDirectory($dir);
+
+            if (!$this->fs->move($srcPath, $dstPath)) {
+                throw new RuntimeException('Failed to move ' . $name . ' to ' . $dstPath);
+            }
+        } else {
+            throw new InvalidArgumentException($name . ' is not exists.');
         }
     }
 }
