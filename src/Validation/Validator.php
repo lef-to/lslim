@@ -54,9 +54,14 @@ class Validator
     public function __construct(Logger $logger = null)
     {
         $this->logger = $logger;
+        $this->rules = [];
+        $this->clear();
+    }
+
+    public function clear()
+    {
         $this->params = [];
         $this->files = [];
-        $this->rules = [];
         $this->errors = [];
     }
 
@@ -141,12 +146,16 @@ class Validator
                         }
                     }
                 } else {
-                    if (Arr::has($this->params, $key)) {
-                        $value = Arr::get($this->params, $key);
-                    } elseif (Arr::has($this->files, $key)) {
-                        $value = Arr::get($this->files, $key);
+                    if ($this->hasError($key)) {
+                        $skip = true;
                     } else {
-                        throw new RuntimeException($key . ' is not validated.');
+                        if (Arr::has($this->params, $key)) {
+                            $value = Arr::get($this->params, $key);
+                        } elseif (Arr::has($this->files, $key)) {
+                            $value = Arr::get($this->files, $key);
+                        } else {
+                            throw new RuntimeException($key . ' is not validated.');
+                        }
                     }
                 }
 
