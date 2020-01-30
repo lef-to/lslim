@@ -71,6 +71,17 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
     /**
      * {@inheritdoc}
      */
+    public function getUrl($name)
+    {
+        if ($this->willBeDeleted($name)) {
+            return null;
+        }
+        return $this->getFileUrl($name);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function makeResponseWithFile(ResponseInterface $res, $name): ResponseInterface
     {
         if ($this->willBeDeleted($name)) {
@@ -173,6 +184,12 @@ abstract class UploadedFileManagerBase implements UploadedFileManagerInterface
      * @return \Psr\Http\Message\StreamInterface|null
      */
     abstract protected function getFileStream($name): ?StreamInterface;
+
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    abstract protected function getFileUrl($name);
 
     /**
      * @param string $name

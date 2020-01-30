@@ -20,6 +20,12 @@ interface UploadedFileManagerInterface
      */
     public function getStream($name): ?StreamInterface;
 
+    /**
+     * @param string $name
+     * @return string|null
+     */
+    public function getUrl($name);
+
     public function clear();
 
     /**

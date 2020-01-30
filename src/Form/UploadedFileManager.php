@@ -81,6 +81,18 @@ class UploadedFileManager extends UploadedFileManagerBase
     /**
      * {@inheritdoc}
      */
+    protected function getFileUrl($name)
+    {
+        $path = $this->getPath($name);
+        if ($path && is_file($path)) {
+            return 'file://' . $path;
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     protected function saveFile($name, UploadedFileInterface $file)
     {
         $dstPath = $this->getPath($name);
