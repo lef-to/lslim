@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-namespace LSlim\File;
+namespace LSlim\Csv;
 
 use IteratorAggregate;
 use SplFileObject;
