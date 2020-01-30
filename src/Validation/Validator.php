@@ -108,7 +108,15 @@ class Validator
         }
 
         $files = $req->getUploadedFiles();
+        $this->validate($params, $files);
+    }
 
+    /**
+     * @param array|\ArrayAccess $params
+     * @param array|\ArrayAccess|null $files
+     */
+    public function validate($params, $files = null)
+    {
         foreach ($this->rules as $rule) {
             $name = $rule['name'];
             $value = null;
@@ -119,6 +127,9 @@ class Validator
 
             if (empty($key)) {
                 if ($type == static::TYPE_FILE) {
+                    if ($files === null) {
+                        throw new RuntimeException('File type is not supported.');
+                    }
                     $value = Arr::get($files, $name, null);
                     if ($value instanceof UploadedFileInterface && $value->getError() == UPLOAD_ERR_NO_FILE) {
                         $value = null;
@@ -138,7 +149,7 @@ class Validator
                         } else {
                             if (Arr::has($this->params, $k)) {
                                 $value[] = Arr::get($this->params, $k);
-                            } elseif (Arr::has($this->files, $k)) {
+                            } elseif ($files !== null && Arr::has($this->files, $k)) {
                                 $value[] = Arr::get($this->files, $k);
                             } else {
                                 throw new RuntimeException($k . ' is not validated.');
@@ -151,7 +162,7 @@ class Validator
                     } else {
                         if (Arr::has($this->params, $key)) {
                             $value = Arr::get($this->params, $key);
-                        } elseif (Arr::has($this->files, $key)) {
+                        } elseif ($files !== null && Arr::has($this->files, $key)) {
                             $value = Arr::get($this->files, $key);
                         } else {
                             throw new RuntimeException($key . ' is not validated.');
@@ -171,9 +182,11 @@ class Validator
                     $rule['rule']->check($value);
                 }
             } catch (ValidationException $ex) {
-                // ファイルの場合はバリデーションがとおらなかったものは削除する
-                if ($type == static::TYPE_FILE) {
-                    Arr::set($this->files, $name, null);
+                if ($files !== null) {
+                    // ファイルの場合はバリデーションがとおらなかったものは削除する
+                    if ($type == static::TYPE_FILE) {
+                        Arr::set($this->files, $name, null);
+                    }
                 }
                 $this->setError($name, $ex);
             } catch (Exception $ex) {
