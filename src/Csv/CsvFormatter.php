@@ -74,7 +74,7 @@ class CsvFormatter
         $ret = '';
         $first = true;
         foreach ($data as $v) {
-            if (preg_match($this->regex, $v)) {
+            if (preg_match($this->regex, (string)$v)) {
                 $v = str_replace('"', '""', $v);
                 $v = '"' . $v . '"';
             }

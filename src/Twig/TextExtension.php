@@ -16,6 +16,10 @@ class TextExtension extends AbstractExtension
 
     public function shrink($value, $length, $width, $sep = '...')
     {
+        if ($value === null) {
+            $value = '';
+        }
+
         $l = mb_strlen($value);
         if ($l < $length) {
             return $value;
