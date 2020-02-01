@@ -65,6 +65,13 @@ class CsvFormatter
     public function format(iterable $data): Traversable
     {
         foreach ($data as $line) {
+            if (!is_iterable($line) && is_object($line)) {
+                if (method_exists($line, 'toArray')) {
+                    $line = $line->toArray();
+                } else {
+                    $line = (array)$line;
+                }
+            }
             yield $this->formatLine($line);
         }
     }
