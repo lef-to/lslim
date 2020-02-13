@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace LSLim\Service;
 
+use LSlim\Middleware\LoggerExtender;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Monolog\Logger;
@@ -39,10 +40,12 @@ class LoggerProvider implements ServiceProviderInterface
             $permission = $config['permission'] ?? 0664;
             $lock = $config['use_lock'] ?? false;
             $introspectionEnabled = $config['introspection_enabled'] ?? false;
-            $rotate = $config['rotate'] ?? 10;
+            $rotate = $config['rotate'] ?? 30;
             $logDir = $config['dir'] ?? $c['log_dir'];
+            $format = $config['format']
+                ?? "[%datetime%][%extra.client_ip%] \"%extra.http_method% %extra.request_path%\" %level_name%: %message% %context%\n";
 
-            $logger  = new Logger($name);
+            $logger = new Logger($name);
 
             if ($introspectionEnabled) {
                 $introspectionLevel = $config['introspection_level']  ?? $defaultLevel;
@@ -55,7 +58,7 @@ class LoggerProvider implements ServiceProviderInterface
             if ($sapiName == 'cli' || $sapiName == 'cli-server') {
                 $handler = new StreamHandler('php://stderr', $level);
 
-                $formatter = new LineFormatter("[%datetime%] %channel%.%level_name%: %message% %context%\n");
+                $formatter = new LineFormatter("[%datetime%] %level_name%: %message% %context%\n");
                 $handler->setFormatter($formatter);
                 $logger->pushHandler($handler);
 
@@ -64,13 +67,18 @@ class LoggerProvider implements ServiceProviderInterface
 
             $handler = new RotatingFileHandler($name, $rotate, $level, true, $permission, $lock);
 
-            $formatter = new LineFormatter();
+            $formatter = new LineFormatter($format);
             $formatter->includeStacktraces(true);
 
             $handler->setFormatter($formatter);
             $logger->pushHandler($handler);
 
             return $logger;
+        };
+
+        $container['logger_extender'] = static function (Container $c) use ($config) {
+            $attr = $config['client_ip_attr'] ?? 'client-ip';
+            return new LoggerExtender($c, $attr);
         };
     }
 }
