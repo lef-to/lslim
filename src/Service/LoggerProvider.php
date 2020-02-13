@@ -38,13 +38,17 @@ class LoggerProvider implements ServiceProviderInterface
             $level = $config['level'] ?? $defaultLevel;
             $permission = $config['permission'] ?? 0664;
             $lock = $config['use_lock'] ?? false;
-            $introspectionLevel = $config['introspection_level']  ?? $defaultLevel;
+            $introspectionEnabled = $config['introspection_enabled'] ?? false;
             $rotate = $config['rotate'] ?? 10;
             $logDir = $config['dir'] ?? $c['log_dir'];
 
             $logger  = new Logger($name);
-            $processor = new IntrospectionProcessor($introspectionLevel);
-            $logger->pushProcessor($processor);
+
+            if ($introspectionEnabled) {
+                $introspectionLevel = $config['introspection_level']  ?? $defaultLevel;
+                $processor = new IntrospectionProcessor($introspectionLevel);
+                $logger->pushProcessor($processor);
+            }
 
             $name = $logDir . DIRECTORY_SEPARATOR . $name . '.log';
             $sapiName = php_sapi_name();
