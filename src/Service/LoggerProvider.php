@@ -53,7 +53,7 @@ class LoggerProvider implements ServiceProviderInterface
                 $logger->pushProcessor($processor);
             }
 
-            $name = $logDir . DIRECTORY_SEPARATOR . $name . '.log';
+            $path = $logDir . DIRECTORY_SEPARATOR . $name . '.log';
             $sapiName = php_sapi_name();
             if ($sapiName == 'cli' || $sapiName == 'cli-server') {
                 $handler = new StreamHandler('php://stderr', $level);
@@ -62,10 +62,10 @@ class LoggerProvider implements ServiceProviderInterface
                 $handler->setFormatter($formatter);
                 $logger->pushHandler($handler);
 
-                $name = $logDir . DIRECTORY_SEPARATOR . $name . '_cli.log';
+                $path = $logDir . DIRECTORY_SEPARATOR . $name . '_cli.log';
             }
 
-            $handler = new RotatingFileHandler($name, $rotate, $level, true, $permission, $lock);
+            $handler = new RotatingFileHandler($path, $rotate, $level, true, $permission, $lock);
 
             $formatter = new LineFormatter($format);
             $formatter->includeStacktraces(true);
