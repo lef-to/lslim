@@ -117,89 +117,90 @@ class Validator
      */
     public function validate($params, $files = null)
     {
-        foreach ($this->rules as $rule) {
-            $name = $rule['name'];
-            $value = null;
+        foreach ($this->rules as $name => $rules) {
+            foreach ($rules as $rule) {
+                $value = null;
 
-            $option = $rule['option'];
-            $type = $option[static::OPTION_TYPE] ?? '';
-            $key = $option[static::OPTION_KEY] ?? [];
+                $option = $rule['option'];
+                $type = $option[static::OPTION_TYPE] ?? '';
+                $key = $option[static::OPTION_KEY] ?? [];
 
-            if (empty($key)) {
-                if ($type == static::TYPE_FILE) {
-                    if ($files === null) {
-                        throw new RuntimeException('File type is not supported.');
+                if (empty($key)) {
+                    if ($type == static::TYPE_FILE) {
+                        if ($files === null) {
+                            throw new RuntimeException('File type is not supported.');
+                        }
+                        $value = Arr::get($files, $name, null);
+                        if ($value instanceof UploadedFileInterface && $value->getError() == UPLOAD_ERR_NO_FILE) {
+                            $value = null;
+                        }
+                        Arr::set($this->files, $name, $value);
+                    } else {
+                        $value = $this->fixValue(Arr::get($params, $name, null), $option);
+                        Arr::set($this->params, $name, $value);
                     }
-                    $value = Arr::get($files, $name, null);
-                    if ($value instanceof UploadedFileInterface && $value->getError() == UPLOAD_ERR_NO_FILE) {
-                        $value = null;
-                    }
-                    Arr::set($this->files, $name, $value);
                 } else {
-                    $value = $this->fixValue(Arr::get($params, $name, null), $option);
-                    Arr::set($this->params, $name, $value);
-                }
-            } else {
-                $skip = false;
-                if (is_array($key)) {
-                    $value = [];
-                    foreach ($key as $k) {
-                        if ($this->hasError($k)) {
+                    $skip = false;
+                    if (is_array($key)) {
+                        $value = [];
+                        foreach ($key as $k) {
+                            if ($this->hasError($k)) {
+                                $skip = true;
+                            } else {
+                                if (Arr::has($this->params, $k)) {
+                                    $value[] = Arr::get($this->params, $k);
+                                } elseif ($files !== null && Arr::has($this->files, $k)) {
+                                    $value[] = Arr::get($this->files, $k);
+                                } else {
+                                    throw new RuntimeException($k . ' is not validated.');
+                                }
+                            }
+                        }
+                    } else {
+                        if ($this->hasError($key)) {
                             $skip = true;
                         } else {
-                            if (Arr::has($this->params, $k)) {
-                                $value[] = Arr::get($this->params, $k);
-                            } elseif ($files !== null && Arr::has($this->files, $k)) {
-                                $value[] = Arr::get($this->files, $k);
+                            if (Arr::has($this->params, $key)) {
+                                $value = Arr::get($this->params, $key);
+                            } elseif ($files !== null && Arr::has($this->files, $key)) {
+                                $value = Arr::get($this->files, $key);
                             } else {
-                                throw new RuntimeException($k . ' is not validated.');
+                                throw new RuntimeException($key . ' is not validated.');
                             }
                         }
                     }
-                } else {
-                    if ($this->hasError($key)) {
-                        $skip = true;
+
+                    if ($skip) {
+                        continue;
+                    }
+                }
+
+                try {
+                    if ($option[static::OPTION_ASSERT] ?? false) {
+                        $rule['rule']->assert($value);
                     } else {
-                        if (Arr::has($this->params, $key)) {
-                            $value = Arr::get($this->params, $key);
-                        } elseif ($files !== null && Arr::has($this->files, $key)) {
-                            $value = Arr::get($this->files, $key);
-                        } else {
-                            throw new RuntimeException($key . ' is not validated.');
+                        $rule['rule']->check($value);
+                    }
+                } catch (ValidationException $ex) {
+                    if ($files !== null) {
+                        // ファイルの場合はバリデーションがとおらなかったものは削除する
+                        if ($type == static::TYPE_FILE) {
+                            Arr::set($this->files, $name, null);
                         }
                     }
-                }
-
-                if ($skip) {
-                    continue;
-                }
-            }
-
-            try {
-                if ($option[static::OPTION_ASSERT] ?? false) {
-                    $rule['rule']->assert($value);
-                } else {
-                    $rule['rule']->check($value);
-                }
-            } catch (ValidationException $ex) {
-                if ($files !== null) {
-                    // ファイルの場合はバリデーションがとおらなかったものは削除する
-                    if ($type == static::TYPE_FILE) {
-                        Arr::set($this->files, $name, null);
+                    $this->setError($name, $ex);
+                } catch (Exception $ex) {
+                    if ($this->logger !== null) {
+                        $this->logger->error(
+                            'Failed to validation.',
+                            [
+                                'name' => $name,
+                                'exception' => $ex
+                            ]
+                        );
                     }
+                    throw $ex;
                 }
-                $this->setError($name, $ex);
-            } catch (Exception $ex) {
-                if ($this->logger !== null) {
-                    $this->logger->error(
-                        'Failed to validation.',
-                        [
-                            'name' => $name,
-                            'exception' => $ex
-                        ]
-                    );
-                }
-                throw $ex;
             }
         }
     }
@@ -236,11 +237,47 @@ class Validator
      */
     public function add($name, RespectValidator $rule, $option = [])
     {
-        $this->rules[] = [
+        if (!isset($this->rules[$name])) {
+            $this->rules[$name] = [];
+        }
+
+        $this->rules[$name][] = [
             'name' => $name,
             'rule' => $rule,
             'option' => $option
         ];
+
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @param \Respect\Validation\Validator $rule
+     * @param array $option
+     * @return $this
+     */
+    public function set($name, RespectValidator $rule, $option = [])
+    {
+        $this->rules[$name] = [
+            [
+                'name' => $name,
+                'rule' => $rule,
+                'option' => $option
+            ]
+        ];
+
+        return $this;
+    }
+
+    /**
+     * @param string $name
+     * @return $this
+     */
+    public function unset($name)
+    {
+        if (isset($this->rules[$name])) {
+            unset($this->rules[$name]);
+        }
 
         return $this;
     }
