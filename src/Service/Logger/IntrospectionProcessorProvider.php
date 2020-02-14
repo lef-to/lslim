@@ -45,11 +45,16 @@ class IntrospectionProcessorProvider implements ServiceProviderInterface
         $container->extend(
             'logger',
             static function (Logger $logger, Container $c) use ($level, $skipClassesPartials, $skipStackFramesCount) {
-                $processor = new IntrospectionProcessor($level, $skipClassesPartials, $skipStackFramesCount);
+                $processor = static::createProcessor($level, $skipClassesPartials, $skipStackFramesCount);
                 $logger->pushProcessor($processor);
 
                 return $logger;
             }
         );
+    }
+
+    protected static function createProcessor($level, $skipClassesPartials, $skipStackFramesCount)
+    {
+        return new IntrospectionProcessor($level, $skipClassesPartials, $skipStackFramesCount);
     }
 }
