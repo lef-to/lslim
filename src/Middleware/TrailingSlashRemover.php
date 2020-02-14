@@ -7,24 +7,27 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 
-class TrailingSlash extends BaseMiddleware
+class TrailingSlashRemover extends BaseMiddleware
 {
     /**
      * @var string
      */
     protected $basePath;
 
-    public function __construct($trailingSlash = false, $basePath = '')
+    public function __construct($basePath = null)
     {
-        parent::__construct($trailingSlash);
-        $this->basePath = '/' . trim($basePath, '/') . '/';
+        parent::__construct(false);
+        $this->basePath = $basePath;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $path = $request->getUri()->getPath();
-        if ($path === $this->basePath) {
-            return $handler->handle($request);
+        if ($this->basePath !== null) {
+            $path = $request->getUri()->getPath();
+            $basePath = '/' . trim($this->basePath, '/') . '/';
+            if ($path === $basePath) {
+                return $handler->handle($request);
+            }
         }
 
         return parent::process($request, $handler);
