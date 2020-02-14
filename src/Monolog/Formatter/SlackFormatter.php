@@ -18,31 +18,27 @@ class SlackFormatter implements FormatterInterface
     {
         $name = $this->name ?? $record['channel'];
 
+        $message = '*' . htmlspecialchars($record['level_name'])
+            . '* message from *' . htmlspecialchars($name) . '*';
+
         $blocks = [
             [
                 'type' => 'section',
                 'text' => [
-                    'type' => 'mrkdwn',
-                    'text' => '*' . htmlspecialchars($record['level_name'])
-                        . '* message from *' . htmlspecialchars($name) . '*'
-                ]
-            ],
-            [
-                'type' => 'divider'
-            ],
-            [
-                'type' => 'section',
-                'text' => [
                     "type" => "plain_text",
-                    "text" => htmlspecialchars($record['message'])
+                    "text" => mb_substr($record['message'], 0, 1000)
                 ]
             ],
         ];
 
+        $color = $this->getAttachmentColor($record['level']);
         $ret = [
+            'text' => $message,
             'attachments' => [
-                'color' => $this->getAttachmentColor($record['level']),
-                'blocks' => $blocks
+                [
+                    'color' => $color,
+                    'blocks' => $blocks
+                ]
             ]
         ];
 
@@ -60,15 +56,15 @@ class SlackFormatter implements FormatterInterface
 
     protected function getAttachmentColor(int $level): string
     {
-        switch (true) {
-            case $level >= Logger::ERROR:
-                return 'danger';
-            case $level >= Logger::WARNING:
-                return 'warning';
-            case $level >= Logger::INFO:
-                return 'good';
-            default:
-                return '#e3e4e6';
+        if ($level >= Logger::ERROR) {
+            return '#dc3545';
         }
+        if ($level >= Logger::WARNING) {
+            return '#ffc107';
+        }
+        if ($level >= Logger::INFO) {
+            return '#28a745';
+        }
+        return '#6c757d';
     }
 }
