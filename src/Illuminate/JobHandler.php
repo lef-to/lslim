@@ -3,15 +3,15 @@ declare(strict_types=1);
 namespace LSlim\Illuminate;
 
 use Illuminate\Queue\Jobs\Job as QueueJob;
-use LSlim\Traits\HasContainer;
 use Exception;
 
 abstract class JobHandler
 {
-    use HasContainer;
-
     /** @var \Illuminate\Queue\Jobs\Job */
     private $job;
+
+    /** @var \Psr\Container\ContainerInterface */
+    private $container;
 
     public function fire(QueueJob $job, $args)
     {
@@ -28,8 +28,8 @@ abstract class JobHandler
                 $job->delete();
             }
         } catch (Exception $ex) {
-            $this->getLogger()->error(
-                'failed to handle job.',
+            $this->container->get('logger')->error(
+                'Failed to handle job.',
                 [
                     'name' => $this->job->getName(),
                     'exception' => $ex
