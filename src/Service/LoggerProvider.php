@@ -6,7 +6,6 @@ use LSlim\Middleware\LoggerExtender;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Monolog\Logger;
-use Monolog\Processor\IntrospectionProcessor;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RotatingFileHandler;
@@ -39,19 +38,12 @@ class LoggerProvider implements ServiceProviderInterface
             $level = $config['level'] ?? $defaultLevel;
             $permission = $config['permission'] ?? 0664;
             $lock = $config['use_lock'] ?? false;
-            $introspectionEnabled = $config['introspection_enabled'] ?? false;
             $rotate = $config['rotate'] ?? 30;
             $logDir = $config['dir'] ?? $c['log_dir'];
             $format = $config['format']
                 ?? "[%datetime%][%extra.client_ip%] \"%extra.http_method% %extra.request_path%\" %level_name%: %message% %context%\n";
 
             $logger = new Logger($name);
-
-            if ($introspectionEnabled) {
-                $introspectionLevel = $config['introspection_level']  ?? $defaultLevel;
-                $processor = new IntrospectionProcessor($introspectionLevel);
-                $logger->pushProcessor($processor);
-            }
 
             $path = $logDir . DIRECTORY_SEPARATOR . $name . '.log';
             $sapiName = php_sapi_name();
