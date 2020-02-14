@@ -35,6 +35,6 @@ class ErrorHandler extends BaseHandler
     {
         /** @var \Psr\Log\LoggerInterface $logger */
         $logger = $this->container->get('logger');
-        $logger->error($error);
+        $logger->critical($error);
     }
 }
