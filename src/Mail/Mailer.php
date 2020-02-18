@@ -54,7 +54,7 @@ class Mailer
         $transport = new Swift_SmtpTransport(
             $config['host'],
             $config['port'],
-            $config['security']
+            $config['security'] ?? null
         );
 
         if (isset($config['username'])) {
