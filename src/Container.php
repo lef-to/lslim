@@ -72,11 +72,13 @@ class Container extends PImpleContainer implements ContainerInterface
         }
 
         if ($csp !== false) {
-            $middleware = ($csp === null)
-                ? new Csp()
-                : (is_array($csp))
-                ? Csp::createFromData($csp)
-                : Csp::createFromFile($csp);
+            if ($csp === null) {
+                $middleware = new Csp();
+            } elseif (is_array($csp)) {
+                $middleware = Csp::createFromData($csp);
+            } else {
+                $middleware = Csp::createFromFile($csp);
+            }
             $app->addMiddleware($middleware);
         }
 
