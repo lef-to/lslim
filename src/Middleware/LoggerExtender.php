@@ -17,6 +17,11 @@ class LoggerExtender implements MiddlewareInterface
      */
     protected $container;
 
+    /**
+     * @var string
+     */
+    protected $clientIpAttribute;
+
     public function __construct(Container $container, $clientIpAttribute = 'client-ip')
     {
         $this->container = $container;
@@ -35,7 +40,7 @@ class LoggerExtender implements MiddlewareInterface
                 public function __construct(ServerRequestInterface $request, $attr)
                 {
                     $this->request = $request;
-                    $this->addr = $attr;
+                    $this->attr = $attr;
                 }
 
                 public function __invoke(array $record)
@@ -44,6 +49,9 @@ class LoggerExtender implements MiddlewareInterface
                     if ($ip === null) {
                         $param = $this->request->getServerParams();
                         $ip = trim($param['REMOTE_ADDR'] ?? '', '[]');
+                        if ($ip && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_IPV6) === false) {
+                            $ip = '';
+                        }
                     }
 
                     $record['extra'] = array_merge(
