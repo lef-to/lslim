@@ -35,7 +35,8 @@
         "twig/twig": "^3.0",
         "slim/twig-view": "^3.0",
         "illuminate/cache": "^6.0",
-        "micheh/psr7-cache": "^0.5.0"
+        "micheh/psr7-cache": "^0.5.0",
+        "lef-to/monolog-slack-handler": "dev-master"
     },
     "autoload": {
         "psr-4": {
@@ -45,7 +46,12 @@
     "require-dev": {
         "nyholm/psr7-server": "^0.4.1",
         "nyholm/psr7": "^1.2",
-        "middlewares/trailing-slash": "^2.0",
-        "guzzlehttp/guzzle": "~6.0"
-    }
+        "middlewares/trailing-slash": "^2.0"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/lef-to/monolog-slack-handler"
+        }
+    ]
 }
