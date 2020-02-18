@@ -2,6 +2,10 @@
 declare(strict_types=1);
 namespace LSlim;
 
+use LSlim\Middleware\CacheHandler;
+use LSlim\Middleware\ContentTypeNoSniff;
+use LSlim\Middleware\TrailingSlashRemover;
+use Middlewares\Csp;
 use Psr\Container\ContainerInterface;
 use Pimple\Container as PImpleContainer;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -54,5 +58,30 @@ class Container extends PImpleContainer implements ContainerInterface
         $this->offsetSet(RouteParserInterface::class, $app->getRouteCollector()->getRouteParser());
 
         return $app;
+    }
+
+    public function addDefaultMiddlewares(App $app, $basePath = null, $csp = null)
+    {
+        $app->addMiddleware(new CacheHandler());
+
+        if ($this->has('view_extender')) {
+            $app->addMiddleware($this->get('view_extender'));
+        }
+        if ($this->has('logger_extender')) {
+            $app->addMiddleware($this->get('logger_extender'));
+        }
+
+        if ($csp !== false) {
+            $middleware = ($csp === null)
+                ? new Csp()
+                : (is_array($csp))
+                ? Csp::createFromData($csp)
+                : Csp::createFromFile($csp);
+            $app->addMiddleware($middleware);
+        }
+
+        $app->addMiddleware(new ContentTypeNoSniff());
+
+        $app->addMiddleware((new TrailingSlashRemover($basePath))->redirect($app->getResponseFactory()));
     }
 }
