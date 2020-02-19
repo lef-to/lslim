@@ -52,7 +52,7 @@ class SecurityHeaders implements MiddlewareInterface
         $this->noSniff = true;
         $this->crossDomainPolicy = 'none';
         $this->referrerPolicy = 'strict-origin-when-cross-origin';
-        $this->frameOption = 'sameorigin';
+        $this->frameOption = 'deny';
         $this->xssProtectioon = 'block';
         $this->cspOption = [
             'script-src' => [ 'self' => true ],
@@ -163,6 +163,11 @@ class SecurityHeaders implements MiddlewareInterface
      */
     public function setCspOption($value): self
     {
+        if ($value !== false) {
+            if (!is_array($value) && !is_file($value)) {
+                throw new InvalidArgumentException("Invalid argument: " . print_r($value, true));
+            }
+        }
         $this->cspOption = $value;
         return $this;
     }
@@ -171,7 +176,7 @@ class SecurityHeaders implements MiddlewareInterface
     {
         $response = $handler->handle($request);
 
-        if ($this->noOpen !== false && !$response->hasHeader('Referrer-Policy')) {
+        if ($this->noOpen !== false && !$response->hasHeader('X-Download-Options')) {
             $response = $response->withHeader('X-Download-Options', 'noopen');
         }
 
@@ -192,11 +197,11 @@ class SecurityHeaders implements MiddlewareInterface
         }
 
         if ($this->xssProtectioon !== false && !$response->hasHeader('X-XSS-Protection')) {
-            $mode = ($this->xssProtectioon === 'block') ? '1; mode=block' : $this->xssProtectioon;
+            $mode = ($this->xssProtectioon === 'block') ? '1; mode=block' : (string)$this->xssProtectioon;
             $response = $response->withHeader('X-XSS-Protection', $mode);
         }
 
-        if ($this->cspOption !== false) {
+        if ($this->cspOption !== false && !$response->hasHeader('Content-Security-Policy')) {
             $builder = (is_array($this->cspOption))
                 ? CSPBuilder::fromArray($this->cspOption)
                 : CSPBuilder::fromFile($this->cspOption);
