@@ -26,4 +26,28 @@ class MailerFactory
     {
         return new Mailer($charset, $this->config, $this->logger);
     }
+
+    public function getFromAddress()
+    {
+        $from = $this->config['from'] ?? [];
+        if (empty($from)) {
+            return null;
+        }
+
+        if (is_array($from)) {
+            return array_keys($from)[0];
+        }
+
+        return $from;
+    }
+
+    public function getFromName()
+    {
+        $from = $this->config['from'] ?? [];
+        if (is_array($from) && !empty($from)) {
+            return array_values($from)[0];
+        }
+
+        return null;
+    }
 }
