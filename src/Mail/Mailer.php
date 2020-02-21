@@ -96,7 +96,7 @@ class Mailer
         $charset = $this->charset;
         static::setCharset($charset);
 
-        $message = (new Swift_Message())
+        $message = $this->createMessage()
             ->setCharset($charset)
             ->setMaxLineLength(0)
             ->setSubject($subject);
@@ -118,6 +118,11 @@ class Mailer
         }
 
         return $message;
+    }
+
+    public function createMessage(): Swift_Message
+    {
+        return new Swift_Message();
     }
 
     /**

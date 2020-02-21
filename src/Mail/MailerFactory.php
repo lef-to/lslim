@@ -24,7 +24,8 @@ class MailerFactory
 
     public function create($charset = 'iso-2022-jp'): Mailer
     {
-        return new Mailer($charset, $this->config, $this->logger);
+        $klass = $this->config['mailer'] ?? Mailer::class;
+        return new $klass($charset, $this->config, $this->logger);
     }
 
     public function getFromAddress()
