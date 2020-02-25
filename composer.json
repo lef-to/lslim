@@ -27,7 +27,6 @@
         "respect/validation": "^1.1",
         "gcrico/swift-mailer-psr-logger-plugin": "^1.2",
         "swiftmailer/swiftmailer": "^6.2",
-        "illuminate/queue": "^6.0",
         "illuminate/events": "^6.0",
         "vlucas/phpdotenv": "^3.6",
         "pimple/pimple": "^3.2",
@@ -47,7 +46,9 @@
     },
     "require-dev": {
         "nyholm/psr7-server": "^0.4.1",
-        "nyholm/psr7": "^1.2"
+        "nyholm/psr7": "^1.2",
+        "illuminate/queue": "^6.0",
+        "illuminate/bus": "^6.0"
     },
     "repositories": [
         {
