@@ -38,9 +38,13 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Console\Command as IlluminateCommand;
-use Illuminate\Contracts\Events\Dispatcher as DispatcherContract;
+use Illuminate\Contracts\Events\Dispatcher as EventDispatcherContract;
 use Illuminate\Contracts\Debug\ExceptionHandler;
-use Illuminate\Events\Dispatcher;
+use Illuminate\Events\Dispatcher as EventDispatcher;
+use Illuminate\Contracts\Bus\Dispatcher as BusDispatcherContract;
+use Illuminate\Contracts\Bus\QueueingDispatcher as QueueingDispatcherContract;
+use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
+use Illuminate\Bus\Dispatcher as BusDispatcher;
 use LSlim\Console\Command\Mail\TestCommand as MailTestCommand;
 use LSlim\Console\Command\Session\TableCommand as SessionTableCommand;
 use LSlim\Console\Command\Queue\SupervisorCommand;
@@ -122,13 +126,13 @@ class BaseApplication extends Application implements ExceptionHandler
                     return new Listener($dir);
                 });
 
-                $this->laravel->singleton(DispatcherContract::class, static function ($app) {
-                    $dispatcher = new Dispatcher($app);
+                $this->laravel->singleton(EventDispatcherContract::class, static function ($app) {
+                    $dispatcher = new EventDispatcher($app);
                     return $dispatcher->setQueueResolver(function () use ($app) {
                         return $app['queue'];
                     });
                 });
-                $this->laravel->alias(DispatcherContract::class, 'events');
+                $this->laravel->alias(EventDispatcherContract::class, 'events');
 
                 $this->laravel->singleton('queue.worker', function ($app) {
                     return new Worker(
@@ -147,6 +151,17 @@ class BaseApplication extends Application implements ExceptionHandler
                         ? new DatabaseFailedJobProvider($app['db'], $failed['database'] ?? 'default', $failed['table'])
                         : new NullFailedJobProvider();
                 });
+
+                $this->laravel->singleton(BusDispatcher::class, function ($app) {
+                    return new BusDispatcher($app, function ($connection = null) use ($app) {
+                        return $app[QueueFactoryContract::class]->connection($connection);
+                    });
+                });
+
+                $this->laravel->alias(BusDispatcher::class, BusDispatcherContract::class);
+
+                $this->laravel->alias(BusDispatcher::class, QueueingDispatcherContract::class);
+
                 Queue::setFacadeApplication($this->laravel);
 
                 if ($container->has('db')) {

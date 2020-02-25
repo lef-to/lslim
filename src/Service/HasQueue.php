@@ -2,17 +2,16 @@
 declare(strict_types=1);
 namespace LSlim\Service;
 
-use Illuminate\Queue\Capsule\Manager as Queue;
+use Illuminate\Queue\QueueManager;
 
 trait HasQueue
 {
-    abstract protected function getQueue(): Queue;
+    abstract protected function getQueue(): QueueManager;
 
     protected function pushJob($job, $data = '', $queue = null, $connectionName = null)
     {
         $this
             ->getQueue()
-            ->getQueueManager()
             ->connection($connectionName)
             ->push($job, $data, $queue);
     }
@@ -21,7 +20,6 @@ trait HasQueue
     {
         $this
             ->getQueue()
-            ->getQueueManager()
             ->connection($connectionName)
             ->later($delay, $job, $data, $queue);
     }

@@ -4,7 +4,8 @@ namespace LSlim\Service;
 
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
-use Illuminate\Queue\Capsule\Manager as Queue;
+use Illuminate\Queue\QueueManager;
+use Illuminate\Queue\QueueServiceProvider;
 
 class IlluminateQueueProvider implements ServiceProviderInterface
 {
@@ -25,17 +26,43 @@ class IlluminateQueueProvider implements ServiceProviderInterface
         }
 
         $config = $this->config;
-        $container['queue'] = static function (Container $c) use ($config) {
-            $laravel = $c['laravel'];
-            $queue = new Queue($laravel);
-
+        $container->extend('laravel', static function ($laravel, Container $c) use ($config) {
             if ($config === null) {
                 $path = $c['config_dir'] . DIRECTORY_SEPARATOR . $c['env'] . DIRECTORY_SEPARATOR . 'queue.php';
-                $config = require $path;
+                if (is_file($path)) {
+                    $config = require $path;
+                } else {
+                    $config = [
+                        'default' => 'database',
+                        'connections' => [
+                            'database' => [
+                                'driver' => 'database',
+                                'connection' => 'default',
+                                'table' => 'job',
+                                'queue' => 'default',
+                                'retry_after' => 30
+                            ]
+                        ],
+                        'failed' => [
+                            'database' => 'default',
+                            'table' => 'failed_job'
+                        ]
+                    ];
+                }
             }
-
             $laravel['config']['queue'] = $config;
-            return $queue;
+
+            return $laravel;
+        });
+
+        $container['queue'] = static function (Container $c) {
+            $laravel = $c['laravel'];
+            $manager = new QueueManager($laravel);
+
+            $provider = new QueueServiceProvider($laravel);
+            $provider->registerConnectors($manager);
+
+            return $manager;
         };
     }
 }

@@ -4,6 +4,7 @@ namespace LSlim\Service;
 
 use PImple\ServiceProviderInterface;
 use Pimple\Container;
+use Illuminate\Contracts\Container\Container as ContainerContract;
 use LSlim\Illuminate\Container as IlluminateContainer;
 use LSlim\Illuminate\Config;
 
@@ -24,7 +25,7 @@ class IlluminateContainerProvider implements ServiceProviderInterface
 
             if (isset($c['queue'])) {
                 $ret->singleton('queue', static function ($app) use ($c) {
-                    return $c['queue']->getQueueManager();
+                    return $c['queue'];
                 });
             }
 
@@ -59,6 +60,8 @@ class IlluminateContainerProvider implements ServiceProviderInterface
                     . DIRECTORY_SEPARATOR
                     . 'database';
             });
+
+            $ret->instance(ContainerContract::class, $ret);
 
             return $ret;
         };

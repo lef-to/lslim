@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace LSlim\Illuminate;
 
-use Illuminate\Queue\Jobs\Job as QueueJob;
+use Illuminate\Queue\Jobs\Job;
 use Exception;
 
 abstract class JobHandler
@@ -13,7 +13,7 @@ abstract class JobHandler
     /** @var \Psr\Container\ContainerInterface */
     private $container;
 
-    public function fire(QueueJob $job, $args)
+    public function fire(Job $job, $args)
     {
         $this->job = $job;
 
