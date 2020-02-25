@@ -81,7 +81,6 @@ class BaseApplication extends Application implements ExceptionHandler
         if ($container->has('laravel')) {
             $this->laravel = $this->container->get('laravel');
 
-            $this->laravel->instance('lslim.container', $container);
             $this->laravel->instance('files', new Filesystem());
             $this->composer = new Composer($this->laravel['files'], $this->laravel['path.base']);
 
