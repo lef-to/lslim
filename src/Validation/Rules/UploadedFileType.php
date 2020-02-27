@@ -48,7 +48,6 @@ class UploadedFileType extends AbstractRule
         $stream = $input->getStream();
         $tmpFile = $stream->getMetadata('uri');
         $this->mimeType = $this->getMimeType($tmpFile);
-        $stream->close();
 
         foreach ($this->accesptTypes as $type) {
             if (strpos($type, $this->mimeType) === 0) {
