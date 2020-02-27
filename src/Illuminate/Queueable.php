@@ -11,6 +11,16 @@ trait Queueable
 {
     use InteractsWithQueue;
 
+    /**
+     * @var int|null 最大試行回数
+     */
+    public $tries = 1;
+
+    /**
+     * @var int|null ジョブを再試行するまでに待つ秒数
+     */
+    public $retryAfter = 30;
+
     protected function getContainer(): ContainerInterface
     {
         $job = $this->job;
