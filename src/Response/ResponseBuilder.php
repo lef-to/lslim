@@ -172,7 +172,7 @@ class ResponseBuilder
                     $localizedName .= $ext;
                 }
             }
-            $disposition[] = "filename*=UTF-8*''" . rawurlencode($localizedName);
+            $disposition[] = "filename*=UTF-8''" . rawurlencode($localizedName);
         }
 
         $this->response = $this->response
