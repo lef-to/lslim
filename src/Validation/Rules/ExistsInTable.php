@@ -3,14 +3,14 @@ declare(strict_types=1);
 namespace LSlim\Validation\Rules;
 
 use Respect\Validation\Rules\AbstractRule;
-use Illuminate\Database\Capsule\Manager as Database;
+use Illuminate\Database\ConnectionInterface;
 
-class Unique extends AbstractRule
+class ExistsInTable extends AbstractRule
 {
     /**
-     * @var \Illuminate\Database\Capsule\Manager
+     * @var \Illuminate\Database\ConnectionInterface
      */
-    protected $db;
+    protected $connection;
 
     /**
      * @var string
@@ -27,18 +27,12 @@ class Unique extends AbstractRule
      */
     protected $callback;
 
-    /**
-     * @var string
-     */
-    protected $connectionName;
-
-    public function __construct(Database $db, $tableName, $fieldName, $callback = null, $connectionName = 'default')
+    public function __construct(ConnectionInterface $connection, $tableName, $fieldName, $callback = null)
     {
-        $this->db = $db;
+        $this->connection = $connection;
         $this->tableName = $tableName;
         $this->fieldName = $fieldName;
         $this->callback = $callback;
-        $this->connectionName = $connectionName;
     }
 
     /**
@@ -46,8 +40,7 @@ class Unique extends AbstractRule
      */
     public function validate($input)
     {
-        $table = $this->db
-            ->getConnection($this->connectionName)
+        $table = $this->connection
             ->table($this->tableName)
             ->where($this->fieldName, $input);
 
@@ -55,6 +48,6 @@ class Unique extends AbstractRule
             ($this->callback)($table);
         }
 
-        return $table->first([ $this->fieldName ]) === null;
+        return $table->exists();
     }
 }
