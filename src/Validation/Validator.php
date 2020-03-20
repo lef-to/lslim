@@ -127,6 +127,9 @@ class Validator
                 $key = $option[static::OPTION_KEY] ?? [];
 
                 if (empty($key)) {
+                    if ($this->hasError($name)) {
+                        continue;
+                    }
                     if ($type == static::TYPE_FILE) {
                         if ($files === null) {
                             throw new RuntimeException('File type is not supported.');
