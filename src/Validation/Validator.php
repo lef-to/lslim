@@ -22,6 +22,7 @@ class Validator
     const OPTION_ASSERT = 'assert';
     const OPTION_TRIM = 'trim';
     const OPTION_EMPTY_TO_NULL = 'empty_to_null';
+    const OPTION_ALIAS = 'alias';
 
     /**
      * @var array
@@ -188,7 +189,8 @@ class Validator
                             Arr::set($this->files, $name, null);
                         }
                     }
-                    $this->setError($name, $ex);
+                    $alias = $option[static::OPTION_ALIAS] ?? null;
+                    $this->setError($name, $alias, $ex);
                 } catch (Exception $ex) {
                     if ($this->logger !== null) {
                         $this->logger->error(
@@ -209,13 +211,13 @@ class Validator
      * @param string $name
      * @param \Respect\Validation\Exceptions\ValidationException $ex
      */
-    protected function setError($name, ValidationException $ex)
+    protected function setError($name, $ruleName, ValidationException $ex)
     {
         if ($ex instanceof NestedValidationException) {
             $iter = $ex->getIterator();
             if ($iter->count()) {
                 foreach ($iter as $e) {
-                    $this->setError($name, $e);
+                    $this->setError($name, $ruleName, $e);
                 }
                 return;
             }
@@ -225,7 +227,7 @@ class Validator
             $this->errors[$name] = [];
         }
 
-        $id = $ex->guessId();
+        $id = ($ruleName) ? $ruleName : $ex->guessId();
         $this->errors[$name][$id] = $ex;
     }
 
