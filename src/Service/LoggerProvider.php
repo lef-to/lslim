@@ -9,6 +9,7 @@ use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RotatingFileHandler;
+use Bramus\Monolog\Formatter\ColoredLineFormatter;
 
 class LoggerProvider implements ServiceProviderInterface
 {
@@ -50,7 +51,14 @@ class LoggerProvider implements ServiceProviderInterface
             if ($sapiName == 'cli' || $sapiName == 'cli-server') {
                 $handler = new StreamHandler('php://stderr', $level);
 
-                $formatter = new LineFormatter("[%datetime%] %level_name%: %message% %context%\n");
+                $format = "[%datetime%] %level_name%: %message% %context%\n";
+                if (stream_isatty(STDERR)) {
+                    $formatter = new ColoredLineFormatter($format);
+                } else {
+                    $formatter = new LineFormatter($format);
+                }
+                $formatter->includeStacktraces(true);
+
                 $handler->setFormatter($formatter);
                 $logger->pushHandler($handler);
 
