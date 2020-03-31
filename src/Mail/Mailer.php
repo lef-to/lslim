@@ -71,12 +71,10 @@ class Mailer
 
         $mailer = new Swift_Mailer($transport);
 
-        if (is_null($logger)) {
-            $plugin = new Swift_Plugins_LoggerPlugin(new Swift_Plugins_Loggers_ArrayLogger());
-        } else {
+        if (!is_null($logger)) {
             $plugin = new LoggerPlugin($logger);
+            $mailer->registerPlugin($plugin);
         }
-        $mailer->registerPlugin($plugin);
 
         $this->mailer = $mailer;
         $this->defaultFrom = $config['from'] ?? null;
