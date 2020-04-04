@@ -13,6 +13,7 @@ use Swift_Message;
 use Swift_Mime_ContentEncoder_PlainContentEncoder as PlainContentEncoder;
 use Psr\Log\LoggerInterface;
 use InvalidArgumentException;
+use Swift_NullTransport;
 
 class Mailer
 {
@@ -50,23 +51,28 @@ class Mailer
     public function __construct($charset, array $config, LoggerInterface $logger = null)
     {
         $this->charset = $charset;
+        $transportType = $config['transport'] ?? 'smtp';
 
-        $transport = new Swift_SmtpTransport(
-            $config['host'],
-            $config['port'],
-            $config['security'] ?? null
-        );
+        if ($transportType == 'null') {
+            $transport = new Swift_NullTransport();
+        } else {
+            $transport = new Swift_SmtpTransport(
+                $config['host'],
+                $config['port'],
+                $config['security'] ?? null
+            );
 
-        if (isset($config['username'])) {
-            $transport->setUsername($config['username']);
-        }
+            if (isset($config['username'])) {
+                $transport->setUsername($config['username']);
+            }
 
-        if (isset($config['password'])) {
-            $transport->setPassword($config['password']);
-        }
+            if (isset($config['password'])) {
+                $transport->setPassword($config['password']);
+            }
 
-        if (isset($config['ssl'])) {
-            $transport->setStreamOptions(['ssl' => $config['ssl']]);
+            if (isset($config['ssl'])) {
+                $transport->setStreamOptions(['ssl' => $config['ssl']]);
+            }
         }
 
         $mailer = new Swift_Mailer($transport);
