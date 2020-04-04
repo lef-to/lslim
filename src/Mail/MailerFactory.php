@@ -24,7 +24,7 @@ class MailerFactory
 
     public function create($charset = null): Mailer
     {
-        $charset = $charset ?? $this->config['charset'] ?? 'iso-2022-jp';
+        $charset = $charset ?? $this->config['charset'] ?? 'utf-8';
         $klass = $this->config['mailer'] ?? Mailer::class;
         return new $klass($charset, $this->config, $this->logger);
     }
