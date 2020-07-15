@@ -51,7 +51,7 @@ class CsrfProvider implements ServiceProviderInterface
                     $uri = $request->getUri();
 
                     if (isset($c['logger'])) {
-                        $c['logger']->error('csrf check failuer.', [ 'path' => $uri->getPath() ]);
+                        $c['logger']->warning('csrf check failuer.', [ 'path' => $uri->getPath() ]);
                     }
 
                     return $responseFactory->createResponse()
