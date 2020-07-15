@@ -25,6 +25,17 @@ class IlluminateContainerProvider implements ServiceProviderInterface
                 });
             }
 
+            if (isset($c['redis'])) {
+                $ret->singleton('redis', static function ($app) {
+                    $c = $app['lslim.container'];
+                    return $c['redis'];
+                });
+
+                $ret->bind('redis.connection', static function ($app) {
+                    return $app['redis']->connection();
+                });
+            }
+
             if (isset($c['queue'])) {
                 $ret->singleton('queue', static function ($app) {
                     $c = $app['lslim.container'];

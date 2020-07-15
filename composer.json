@@ -48,7 +48,8 @@
         "nyholm/psr7-server": "^0.4.1",
         "nyholm/psr7": "^1.2",
         "illuminate/queue": "^6.0",
-        "illuminate/bus": "^6.0"
+        "illuminate/bus": "^6.0",
+        "illuminate/redis": "^6.0"
     },
     "repositories": [
         {
