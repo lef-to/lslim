@@ -81,7 +81,9 @@ class BaseApplication extends Application implements ExceptionHandler
         if ($container->has('laravel')) {
             $this->laravel = $this->container->get('laravel');
 
-            $this->laravel->instance('files', new Filesystem());
+            if (!$this->laravel->bound('files')) {
+                $this->laravel->instance('files', new Filesystem());
+            }
             $this->composer = new Composer($this->laravel['files'], $this->laravel['path.base']);
 
             if ($this->laravel->bound('db')) {
