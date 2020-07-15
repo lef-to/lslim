@@ -6,8 +6,9 @@ use SessionHandlerInterface;
 use Psr\Container\ContainerInterface;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Exception;
+use SessionUpdateTimestampHandlerInterface;
 
-class DatabaseHandler implements SessionHandlerInterface
+class DatabaseHandler implements SessionHandlerInterface, SessionUpdateTimestampHandlerInterface
 {
     /**
      * @var \Psr\Container\ContainerInterface
@@ -68,13 +69,7 @@ class DatabaseHandler implements SessionHandlerInterface
     public function destroy($id): bool
     {
         try {
-            $this->container->get('db')
-                ->getConnection($this->connectionName)
-                ->transaction(function () use ($id) {
-                    $this->table()->where('id', $id)->delete();
-                    $this->onDestroyed($id);
-                });
-
+            $this->table()->where('id', $id)->delete();
             return true;
         } catch (Exception $ex) {
             $this->container->get('logger')->error(
@@ -89,10 +84,6 @@ class DatabaseHandler implements SessionHandlerInterface
         return false;
     }
 
-    protected function onDestroyed($id)
-    {
-    }
-
     /**
      * @inheritdoc
      */
@@ -100,11 +91,7 @@ class DatabaseHandler implements SessionHandlerInterface
     {
         $ts = time() - $maxlifetime;
         $table = $this->table();
-        $list = $table->where('ts', '<', $ts)->pluck('id');
-
-        foreach ($list as $id) {
-            $this->destroy($id);
-        }
+        $table->where('ts', '<', $ts)->delete();
 
         return true;
     }
@@ -163,5 +150,30 @@ class DatabaseHandler implements SessionHandlerInterface
         }
 
         return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function updateTimestamp($session_id, $session_data)
+    {
+        $ts = time();
+        try {
+            return $this->table()->where('id', $session_id)->update([ 'ts' => $ts ]) > 0;
+        } catch (Exception $ex) {
+            $this->container->get('logger')->error(
+                'Failed to update timestamp.',
+                [ 'exception' => $ex ]
+            );
+        }
+        return false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function validateId($session_id)
+    {
+        return $this->table()->where('id', $session_id)->exists();
     }
 }
