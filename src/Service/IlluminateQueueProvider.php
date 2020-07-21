@@ -6,6 +6,7 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Queue\QueueServiceProvider;
+use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateQueueProvider implements ServiceProviderInterface
 {
@@ -26,7 +27,7 @@ class IlluminateQueueProvider implements ServiceProviderInterface
         }
 
         $config = $this->config;
-        $container->extend('laravel', static function ($laravel, Container $c) use ($config) {
+        $container->extend('laravel', static function (IlluminateContainer $laravel, Container $c) use ($config) {
             if ($config === null) {
                 $path = $c['config_dir'] . DIRECTORY_SEPARATOR . $c['env'] . DIRECTORY_SEPARATOR . 'queue.php';
                 if (is_file($path)) {
@@ -52,11 +53,16 @@ class IlluminateQueueProvider implements ServiceProviderInterface
             }
             $laravel['config']['queue'] = $config;
 
+            $laravel->singleton('queue', static function ($app) use ($c) {
+                return $c['queue'];
+            });
+
             return $laravel;
         });
 
         $container['queue'] = static function (Container $c) {
             $laravel = $c['laravel'];
+
             $manager = new QueueManager($laravel);
 
             $provider = new QueueServiceProvider($laravel);

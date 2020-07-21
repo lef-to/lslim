@@ -5,6 +5,7 @@ namespace LSlim\Service;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Illuminate\Redis\RedisManager;
+use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateRedisProvider implements ServiceProviderInterface
 {
@@ -33,5 +34,17 @@ class IlluminateRedisProvider implements ServiceProviderInterface
 
             return new RedisManager($c['laravel'], $config['client'] ?? 'phpredis', $config);
         };
+
+        $container->extend('laravel', static function (IlluminateContainer $laravel, Container $c) {
+            $laravel->singleton('redis', static function ($app) use ($c) {
+                return $c['redis'];
+            });
+
+            $laravel->bind('redis.connection', static function ($app) {
+                return $app['redis']->connection();
+            });
+
+            return $laravel;
+        });
     }
 }

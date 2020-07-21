@@ -54,6 +54,14 @@ class IlluminateCacheProvider implements ServiceProviderInterface
             }
 
             $laravel['config']['cache'] = $config;
+            $laravel->singleton('cache', static function ($app) use ($c) {
+                return $c['cache'];
+            });
+
+            $laravel->singleton('cache.store', static function ($app) {
+                return $app['cache']->driver();
+            });
+
             return $laravel;
         });
 

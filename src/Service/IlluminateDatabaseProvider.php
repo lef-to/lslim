@@ -5,6 +5,7 @@ namespace LSlim\Service;
 use PImple\Container;
 use Pimple\ServiceProviderInterface;
 use Illuminate\Database\Capsule\Manager as Database;
+use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateDatabaseProvider implements ServiceProviderInterface
 {
@@ -39,5 +40,12 @@ class IlluminateDatabaseProvider implements ServiceProviderInterface
 
             return $db;
         };
+
+        $container->extend('laravel', static function (IlluminateContainer $laravel, Container $c) {
+            $laravel->singleton('db', static function ($app) use ($c) {
+                return $c['db']->getDatabaseManager();
+            });
+            return $laravel;
+        });
     }
 }

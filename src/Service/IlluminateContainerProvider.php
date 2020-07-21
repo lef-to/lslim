@@ -18,59 +18,23 @@ class IlluminateContainerProvider implements ServiceProviderInterface
             $ret->instance('lslim.container', $c);
             $ret->instance('env', $c['env']);
 
-            if (isset($c['db'])) {
-                $ret->singleton('db', static function ($app) {
-                    $c = $app['lslim.container'];
-                    return $c['db']->getDatabaseManager();
-                });
-            }
-
-            if (isset($c['redis'])) {
-                $ret->singleton('redis', static function ($app) {
-                    $c = $app['lslim.container'];
-                    return $c['redis'];
-                });
-
-                $ret->bind('redis.connection', static function ($app) {
-                    return $app['redis']->connection();
-                });
-            }
-
-            if (isset($c['queue'])) {
-                $ret->singleton('queue', static function ($app) {
-                    $c = $app['lslim.container'];
-                    return $c['queue'];
-                });
-            }
-
-            if (isset($c['cache'])) {
-                $ret->singleton('cache', static function ($app) {
-                    $c = $app['lslim.container'];
-                    return $c['cache'];
-                });
-            }
-
             $ret->singleton('config', static function ($app) {
                 return new Config();
             });
 
-            $ret->singleton('path.base', static function ($app) {
-                $c = $app['lslim.container'];
+            $ret->singleton('path.base', static function ($app) use ($c) {
                 return $c['base_dir'];
             });
 
-            $ret->singleton('path.storage', static function ($app) {
-                $c = $app['lslim.container'];
+            $ret->singleton('path.storage', static function ($app) use ($c) {
                 return $c['var_dir'];
             });
 
-            $ret->singleton('path.config', static function ($app) {
-                $c = $app['lslim.container'];
+            $ret->singleton('path.config', static function ($app) use ($c) {
                 return $c['config_dir'];
             });
 
-            $ret->singleton('path.database', static function ($app) {
-                $c = $app['lslim.container'];
+            $ret->singleton('path.database', static function ($app) use ($c) {
                 if (isset($c['database_dir'])) {
                     return $c['database_dir'];
                 }
