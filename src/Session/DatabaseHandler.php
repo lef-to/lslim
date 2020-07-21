@@ -174,6 +174,17 @@ class DatabaseHandler implements SessionHandlerInterface, SessionUpdateTimestamp
      */
     public function validateId($session_id)
     {
-        return $this->table()->where('id', $session_id)->exists();
+        $result = $this->table()->where('id', $session_id)->exists();
+
+        // @see https://github.com/symfony/symfony/pull/36490
+        if (\PHP_VERSION_ID < 70317 || (70400 <= \PHP_VERSION_ID && \PHP_VERSION_ID < 70405)) {
+            // work around https://bugs.php.net/79413
+            foreach (debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS) as $frame) {
+                if (!isset($frame['class']) && isset($frame['function']) && \in_array($frame['function'], ['session_regenerate_id', 'session_create_id'], true)) {
+                    return !$result;
+                }
+            }
+        }
+        return $result;
     }
 }

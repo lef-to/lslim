@@ -31,7 +31,12 @@ class Session implements MiddlewareInterface
     /**
      * @var string|null
      */
-    protected $sameSite = 'strict';
+    protected $sameSite = 'lax';
+
+    /**
+     * @var int
+     */
+    protected $regenerateInterval = 0;
 
     /**
      * @param string $name
@@ -69,6 +74,12 @@ class Session implements MiddlewareInterface
         return $this;
     }
 
+    public function setRegenerateInterval($interval): self
+    {
+        $this->regenerateInterval = $interval;
+        return $this;
+    }
+
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         ini_set('session.use_strict_mode', '1');
@@ -86,14 +97,50 @@ class Session implements MiddlewareInterface
         }
 
         session_start();
+        if ($this->regenerateInterval > 0 && session_status() == PHP_SESSION_ACTIVE) {
+            if (isset($_SESSION['__lslim_d'])) {
+                if ($_SESSION['__lslim_d'] < (time() - 300)) {
+                    session_destroy();
+                    session_start();
+                } elseif (isset($_SESSION['__lslim_n'])) {
+                    session_commit();
+                    session_id($_SESSION['__lslim_n']);
+                    session_start();
+                }
+            }
+        }
+
         try {
             $response = $handler->handle($request);
             if (session_status() == PHP_SESSION_ACTIVE) {
+                if ($this->regenerateInterval > 0) {
+                    $t = time();
+                    if (!isset($_SESSION['__lslim_c'])) {
+                        $_SESSION['__lslim_c'] = $t;
+                    } elseif ($_SESSION['__lslim_c'] < ($t - $this->regenerateInterval)) {
+                        $old = $_SESSION;
+
+                        $n = session_create_id();
+                        $_SESSION = [
+                            '__lslim_n' => $n,
+                            '__lslim_d' => $t
+                        ];
+
+                        session_commit();
+                        session_id($n);
+                        ini_set('session.use_strict_mode', '0');
+                        session_start();
+
+                        $_SESSION = $old;
+                        $_SESSION['__lslim_c'] = $t;
+                    }
+                }
+
                 $newId = session_id();
                 if ($id != $newId) {
                     $cookie = Cookies::get($response, $name);
 
-                    if (is_null($cookie->getValue())) {
+                    if ($cookie->getValue() === null) {
                         $cookie = SetCookie::create($name)
                             ->withValue($newId)
                             ->withPath($this->path)
