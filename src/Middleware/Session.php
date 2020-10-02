@@ -8,6 +8,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use SessionHandlerInterface;
 use Dflydev\FigCookies\FigResponseCookies as Cookies;
 use Dflydev\FigCookies\SetCookie;
+use Dflydev\FigCookies\SetCookies;
 use Dflydev\FigCookies\Modifier\SameSite;
 use Psr\Http\Server\RequestHandlerInterface;
 
@@ -153,7 +154,7 @@ class Session implements MiddlewareInterface
                             $cookie = $cookie->withSameSite(SameSite::fromString($this->sameSite));
                         }
 
-                        $response = Cookies::set($response, $cookie);
+                        $response = $response->withAddedHeader(SetCookies::SET_COOKIE_HEADER, (string) $cookie);
                     }
                 }
             }
