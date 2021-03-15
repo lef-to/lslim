@@ -25,7 +25,7 @@ class CacheFactory
             foreach ($config['stores'] as $name => &$cache) {
                 $driver = $cache['driver'] ?? '';
                 if ($driver == 'file' && !isset($cache['path'])) {
-                    $cache['path'] = ltrim($c->get('cache_dir'), DIRECTORY_SEPARATOR)
+                    $cache['path'] = rtrim($c->get('cache_dir'), DIRECTORY_SEPARATOR)
                             . DIRECTORY_SEPARATOR . 'cache';
                 }
             }
