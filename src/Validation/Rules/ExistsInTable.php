@@ -2,10 +2,10 @@
 declare(strict_types=1);
 namespace LSlim\Validation\Rules;
 
-use Respect\Validation\Rules\AbstractRule;
 use Illuminate\Database\ConnectionInterface;
+use Respect\Validation\Rules\Core\Simple;
 
-class ExistsInTable extends AbstractRule
+class ExistsInTable extends Simple
 {
     /**
      * @var \Illuminate\Database\ConnectionInterface
@@ -38,7 +38,7 @@ class ExistsInTable extends AbstractRule
     /**
      * @inheritdoc
      */
-    public function validate($input)
+    public function isValid(mixed $input): bool
     {
         $table = $this->connection
             ->table($this->tableName)

@@ -12,32 +12,33 @@
             "email": "ryun@ryun.jp"
         }
     ],
+    "minimum-stability": "stable",
+    "prefer-stable": true,
     "require": {
-        "php": "^7.2",
+        "php": "^8.3",
         "slim/slim": "^4.3",
         "slim/csrf": "^1.0",
         "slim/flash": "^0.4.0",
-        "illuminate/database": "^6.0",
-        "illuminate/filesystem": "^6.0",
-        "doctrine/dbal": "^2.10",
-        "illuminate/console": "^6.0",
-        "illuminate/pagination": "^6.0",
-        "monolog/monolog": "^2.0",
-        "guzzlehttp/psr7": "^1.6",
-        "respect/validation": "^1.1",
-        "swiftmailer/swiftmailer": "^6.2",
-        "illuminate/events": "^6.0",
-        "vlucas/phpdotenv": "^3.6",
+        "illuminate/database": "^12.0",
+        "illuminate/filesystem": "^12.0",
+        "illuminate/console": "^12.0",
+        "illuminate/pagination": "^12.0",
+        "monolog/monolog": "^3.9",
+        "guzzlehttp/psr7": "^2.7",
+        "respect/validation": "^2.4",
+        "illuminate/events": "^12.0",
+        "vlucas/phpdotenv": "^5.6",
         "pimple/pimple": "^3.2",
-        "dflydev/fig-cookies": "^2.0",
+        "dflydev/fig-cookies": "^3.1",
         "twig/twig": "^3.0",
         "slim/twig-view": "^3.0",
-        "illuminate/cache": "^6.0",
-        "micheh/psr7-cache": "^0.5.0",
-        "lef-to/monolog-slack-handler": "^1.0",
+        "illuminate/cache": "^12.0",
+        "lef-to/monolog-slack-handler": "2.x-dev",
         "middlewares/trailing-slash": "^2.0",
         "middlewares/csp": "^3.0",
-        "bramus/monolog-colored-line-formatter": "~3.0"
+        "bramus/monolog-colored-line-formatter": "^3.1",
+        "symfony/mailer": "^7.3",
+        "slim/http-cache": "^1.2"
     },
     "autoload": {
         "psr-4": {
@@ -45,11 +46,11 @@
         }
     },
     "require-dev": {
-        "nyholm/psr7-server": "^0.4.1",
+        "nyholm/psr7-server": "^1.1.0",
         "nyholm/psr7": "^1.2",
-        "illuminate/queue": "^6.0",
-        "illuminate/bus": "^6.0",
-        "illuminate/redis": "^6.0"
+        "illuminate/queue": "^12.0",
+        "illuminate/bus": "^12.0",
+        "illuminate/redis": "^12.0"
     },
     "repositories": [
         {

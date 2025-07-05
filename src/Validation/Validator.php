@@ -230,7 +230,7 @@ class Validator
             $this->errors[$name] = [];
         }
 
-        $id = ($ruleName) ? $ruleName : $ex->guessId();
+        $id = ($ruleName) ? $ruleName : $ex->getId();
         $this->errors[$name][$id] = $ex;
     }
 

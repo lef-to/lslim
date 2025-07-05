@@ -18,7 +18,7 @@ class Config extends Fluent
     /**
      * @inheritdoc
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         return Arr::has($this->attributes, $offset);
     }
@@ -26,7 +26,7 @@ class Config extends Fluent
     /**
      * @inheritdoc
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, $value): void
     {
         Arr::set($this->attributes, $offset, $value);
     }
@@ -34,7 +34,7 @@ class Config extends Fluent
     /**
      * @inheritdoc
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         Arr::set($this->attributes, $offset, null);
     }

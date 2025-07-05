@@ -2,11 +2,11 @@
 declare(strict_types=1);
 namespace LSlim\Validation\Rules;
 
-use Respect\Validation\Rules\AbstractRule;
+use Respect\Validation\Rules\Core\Simple;
 
-class Timecode extends AbstractRule
+class Timecode extends Simple
 {
-    public function validate($input)
+    public function isValid(mixed $input): bool
     {
         if ($input === null) {
             return false;

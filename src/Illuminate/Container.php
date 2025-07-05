@@ -316,9 +316,58 @@ class Container extends BaseContainer implements ApplicationInterface
     /**
      * @inheritdoc
      */
-    public function storagePath()
+    public function storagePath($file = '')
     {
+        if (!empty($file)) {
+            return rtrim($this['path.storage'], DIRECTORY_SEPARATOR) .  DIRECTORY_SEPARATOR . ltrim($file, DIRECTORY_SEPARATOR);
+        }
         return $this['path.storage'];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function langPath($path = '')
+    {
+        if (!empty($file)) {
+            return rtrim($this['path.lang'], DIRECTORY_SEPARATOR) .  DIRECTORY_SEPARATOR . ltrim($file, DIRECTORY_SEPARATOR);
+        }
+        return $this['path.lang'];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function publicPath($path = '')
+    {
+        if (!empty($file)) {
+            return rtrim($this['path.public'], DIRECTORY_SEPARATOR) .  DIRECTORY_SEPARATOR . ltrim($file, DIRECTORY_SEPARATOR);
+        }
+        return $this['path.public'];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function hasDebugModeEnabled()
+    {
+        return $this['env'] !== 'production' ? true : false;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function maintenanceMode()
+    {
+        throw new BadMethodCallException('Method maintenanceMode is not implemented.');
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function terminating($callback)
+    {
+        throw new BadMethodCallException('Method termination is not implemented.');
     }
 
     /**

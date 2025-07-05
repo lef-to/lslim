@@ -53,7 +53,7 @@ class LoggerProvider implements ServiceProviderInterface
 
                 $format = "[%datetime%] %level_name%: %message% %context%\n";
                 if (stream_isatty(STDERR)) {
-                    $formatter = new ColoredLineFormatter($format);
+                    $formatter = new ColoredLineFormatter(null, $format);
                 } else {
                     $formatter = new LineFormatter($format);
                 }

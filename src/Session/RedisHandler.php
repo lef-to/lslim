@@ -46,7 +46,7 @@ class RedisHandler implements SessionHandlerInterface, SessionUpdateTimestampHan
     /**
      * @inheritdoc
      */
-    public function close()
+    public function close(): bool
     {
         return true;
     }
@@ -79,7 +79,7 @@ class RedisHandler implements SessionHandlerInterface, SessionUpdateTimestampHan
     /**
      * @inheritdoc
      */
-    public function read($session_id)
+    public function read($session_id): string|false
     {
         $redis = $this->getConnection();
 
@@ -96,15 +96,15 @@ class RedisHandler implements SessionHandlerInterface, SessionUpdateTimestampHan
     /**
      * @inheritdoc
      */
-    public function gc($maxlifetime)
+    public function gc($maxlifetime): int|false
     {
-        return true;
+        return 0;
     }
 
     /**
      * @inheritdoc
      */
-    public function write($session_id, $session_data)
+    public function write($session_id, $session_data): bool
     {
         $redis = $this->getConnection();
         $expire = $this->getExpire();
@@ -129,7 +129,7 @@ class RedisHandler implements SessionHandlerInterface, SessionUpdateTimestampHan
     /**
      * @inheritdoc
      */
-    public function updateTimestamp($session_id, $session_data)
+    public function updateTimestamp($session_id, $session_data): bool
     {
         $redis = $this->getConnection();
         $expire = $this->getExpire();
@@ -154,7 +154,7 @@ class RedisHandler implements SessionHandlerInterface, SessionUpdateTimestampHan
     /**
      * @inheritdoc
      */
-    public function validateId($session_id)
+    public function validateId($session_id): bool
     {
         $redis = $this->getConnection();
 

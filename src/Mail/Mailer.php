@@ -2,23 +2,24 @@
 declare(strict_types=1);
 namespace LSlim\Mail;
 
-use Swift;
-use Swift_DependencyContainer;
-use Swift_Preferences;
-use Swift_SmtpTransport;
-use Swift_Mailer;
-use Swift_Plugins_LoggerPlugin;
-use Swift_Plugins_Loggers_ArrayLogger;
-use Swift_Message;
-use Swift_Mime_ContentEncoder_PlainContentEncoder as PlainContentEncoder;
 use Psr\Log\LoggerInterface;
-use InvalidArgumentException;
-use Swift_NullTransport;
+use Symfony\Component\Mailer\Mailer as SymfonyMailer;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mailer\Transport\Dsn;
+use Symfony\Component\Mailer\Transport\Smtp\SmtpTransport;
+use Symfony\Component\Mailer\Transport\TransportInterface;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mime\Email;
 
 class Mailer
 {
     /**
-     * @var \Swift_Mailer mail transport
+     * @var TransportInterface
+     */
+    private $transport = null;
+
+    /**
+     * @var SymfonyMailer mailer
      */
     private $mailer = null;
 
@@ -28,19 +29,9 @@ class Mailer
     private $defaultFrom;
 
     /**
-     * @var string character set
-     */
-    private $charset;
-
-    /**
      * @var \Psr\Log\LoggerInterface|null
      */
     private $logger = null;
-
-    /**
-     * @var array
-     */
-    private $lastFailedRecipients;
 
     /**
      * constructor
@@ -50,42 +41,29 @@ class Mailer
      */
     public function __construct($charset, array $config, LoggerInterface $logger = null)
     {
-        $this->charset = $charset;
         $transportType = $config['transport'] ?? 'smtp';
 
         if ($transportType == 'null') {
-            $transport = new Swift_NullTransport();
+            $transport = Transport::fromDsn('null://null', null, null, $logger);
         } else {
-            $transport = new Swift_SmtpTransport(
+            $dsn = new Dsn(
+                'smtp',
                 $config['host'],
+                $config['username'],
+                $config['password'],
                 $config['port'],
-                $config['security'] ?? null
+                $config['options'] ?? []
             );
-
-            if (isset($config['username'])) {
-                $transport->setUsername($config['username']);
-            }
-
-            if (isset($config['password'])) {
-                $transport->setPassword($config['password']);
-            }
-
-            if (isset($config['ssl'])) {
-                $transport->setStreamOptions(['ssl' => $config['ssl']]);
-            }
+            $factory = new Transport(iterator_to_array(Transport::getDefaultFactories(null, null, $logger)));
+            $transport = $factory->fromDsnObject($dsn);
         }
 
-        $mailer = new Swift_Mailer($transport);
+        $mailer = new SymfonyMailer($transport);
 
-        if (!is_null($logger)) {
-            $plugin = new LoggerPlugin($logger);
-            $mailer->registerPlugin($plugin);
-        }
-
-        $this->mailer = $mailer;
-        $this->defaultFrom = $config['from'] ?? null;
-        $this->logger = $logger;
-        $this->lastFailedRecipients = [];
+        $this->transport    = $transport;
+        $this->mailer       = $mailer;
+        $this->defaultFrom  = $config['from'] ?? null;
+        $this->logger       = $logger;
     }
 
     /**
@@ -97,104 +75,52 @@ class Mailer
      */
     public function create($subject, $to = null, $from = null)
     {
-        $charset = $this->charset;
-        static::setCharset($charset);
-
         $message = $this->createMessage()
-            ->setCharset($charset)
-            ->setMaxLineLength(0)
-            ->setSubject($subject);
-
-        if ($charset == "iso-2022-jp") {
-            $message->setEncoder(new PlainContentEncoder('7bit'));
-        }
+            ->subject($subject);
 
         if (!is_null($to)) {
-            $message->setTo($to);
+            $message->to($to);
         }
 
         if (is_null($from)) {
             if (isset($this->defaultFrom)) {
-                $message->setFrom($this->defaultFrom);
+                $key = array_key_first($this->defaultFrom);
+                $message->from(new Address($key, $this->defaultFrom[$key]));
             }
+        } elseif (is_array($from)) {
+            $key = array_key_first($from);
+            $message->from(new Address($key, $from[$key]));
         } else {
-            $message->setFrom($from);
+            $message->from($from);
         }
 
         return $message;
     }
 
-    public function createMessage(): Swift_Message
+    public function createMessage(): Email
     {
-        return new Swift_Message();
+        return new Email();
     }
 
     /**
      * send message
-     * @param \Swift_Message $message
-     * @return int
+     * @param Email $message
+     * @return void
      */
-    public function send($message)
+    public function send(Email $message)
     {
-        $this->lastFailedRecipients = [];
-        $ret = $this->mailer->send($message, $this->lastFailedRecipients);
-        if (!empty($this->lastFailedRecipients)) {
-            if (is_null($this->logger)) {
-                foreach ($this->lastFailedRecipients as $e) {
-                    error_log('Failed to send mail to ' . $e);
-                }
-            } else {
-                $this->logger->error(
-                    'Failed to send mail.',
-                    [ 'recipients' => $this->lastFailedRecipients ]
-                );
-            }
-        }
-
-        return $ret;
+        $this->mailer->send($message);
     }
 
     public function stopTransport()
     {
-        $this->mailer->getTransport()->stop();
-    }
-
-    /**
-     * @return array
-     */
-    public function getLastFailedRecipients()
-    {
-        return $this->lastFailedRecipients;
+        if ($this->transport instanceof SmtpTransport) {
+            $this->transport->stop();
+        }
     }
 
     public function getDefaultFromAddress()
     {
         return $this->defaultFrom;
-    }
-
-    private static function setCharset($charset)
-    {
-        $container = Swift_DependencyContainer::getInstance();
-        $currentCharset = $container->lookup('properties.charset');
-
-        if (strcasecmp($charset, $currentCharset) === 0) {
-            return;
-        }
-
-        if ($charset == 'iso-2022-jp') {
-            $container
-                ->register('mime.qpheaderencoder')
-                ->asAliasOf('mime.base64headerencoder');
-        } elseif ($charset == 'utf-8') {
-            $container
-                ->register('mime.qpheaderencoder')
-                ->asNewInstanceOf('Swift_Mime_HeaderEncoder_QpHeaderEncoder')
-                ->withDependencies(['mime.charstream']);
-        } else {
-            throw new InvalidArgumentException("Unsupported charset: " . $charset);
-        }
-
-        $preference = Swift_Preferences::getInstance();
-        $preference->setCharset($charset);
     }
 }

@@ -50,7 +50,7 @@ class DatabaseHandler implements SessionHandlerInterface, SessionUpdateTimestamp
     /**
      * @inheritdoc
      */
-    public function close()
+    public function close(): bool
     {
         return true;
     }
@@ -87,19 +87,17 @@ class DatabaseHandler implements SessionHandlerInterface, SessionUpdateTimestamp
     /**
      * @inheritdoc
      */
-    public function gc($maxlifetime)
+    public function gc($maxlifetime): int|false
     {
         $ts = time() - $maxlifetime;
         $table = $this->table();
-        $table->where('ts', '<', $ts)->delete();
-
-        return true;
+        return $table->where('ts', '<', $ts)->delete();
     }
 
     /**
      * @inheritdoc
      */
-    public function read($session_id)
+    public function read($session_id): string|false
     {
         $table = $this->table();
         $data = $table->where('id', $session_id)->value('data');
@@ -114,7 +112,7 @@ class DatabaseHandler implements SessionHandlerInterface, SessionUpdateTimestamp
     /**
      * @inheritdoc
      */
-    public function write($session_id, $session_data)
+    public function write($session_id, $session_data): bool
     {
         try {
             $this->container->get('db')
@@ -155,7 +153,7 @@ class DatabaseHandler implements SessionHandlerInterface, SessionUpdateTimestamp
     /**
      * @inheritdoc
      */
-    public function updateTimestamp($session_id, $session_data)
+    public function updateTimestamp($session_id, $session_data): bool
     {
         $ts = time();
         try {
@@ -172,7 +170,7 @@ class DatabaseHandler implements SessionHandlerInterface, SessionUpdateTimestamp
     /**
      * @inheritdoc
      */
-    public function validateId($session_id)
+    public function validateId($session_id): bool
     {
         $result = $this->table()->where('id', $session_id)->exists();
 

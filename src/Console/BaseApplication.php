@@ -50,6 +50,8 @@ use LSlim\Console\Command\Session\TableCommand as SessionTableCommand;
 use LSlim\Console\Command\Queue\SupervisorCommand;
 use BadMethodCallException;
 use Exception;
+use Symfony\Component\Console\Input\InputDefinition;
+use Throwable;
 
 class BaseApplication extends Application implements ExceptionHandler
 {
@@ -86,6 +88,14 @@ class BaseApplication extends Application implements ExceptionHandler
             }
             $this->composer = new Composer($this->laravel['files'], $this->laravel['path.base']);
 
+            $this->laravel->singleton(EventDispatcherContract::class, static function ($app) {
+                $dispatcher = new EventDispatcher($app);
+                return $dispatcher->setQueueResolver(function () use ($app) {
+                    return $app['queue'];
+                });
+            });
+            $this->laravel->alias(EventDispatcherContract::class, 'events');
+
             if ($this->laravel->bound('db')) {
                 Schema::setFacadeApplication($this->laravel);
                 DB::setFacadeApplication($this->laravel);
@@ -95,11 +105,11 @@ class BaseApplication extends Application implements ExceptionHandler
                 $migrator = new Migrator($repository, $resolver, $this->laravel['files']);
 
                 $this->laravel->singleton('migration.creator', static function ($app) {
-                    return new MigrationCreator($app['files']);
+                    return new MigrationCreator($app['files'], $app['path.stubs']);
                 });
 
                 $this->add(new InstallCommand($repository));
-                $this->add(new MigrateCommand($migrator));
+                $this->add(new MigrateCommand($migrator, $this->laravel['events']));
                 $this->add(new MigrateMakeCommand($this->laravel['migration.creator'], $this->composer));
                 $this->add(new RefreshCommand());
                 $this->add(new ResetCommand($migrator));
@@ -126,14 +136,6 @@ class BaseApplication extends Application implements ExceptionHandler
                     }
                     return new Listener($dir);
                 });
-
-                $this->laravel->singleton(EventDispatcherContract::class, static function ($app) {
-                    $dispatcher = new EventDispatcher($app);
-                    return $dispatcher->setQueueResolver(function () use ($app) {
-                        return $app['queue'];
-                    });
-                });
-                $this->laravel->alias(EventDispatcherContract::class, 'events');
 
                 $this->laravel->singleton('queue.worker', function ($app) {
                     return new Worker(
@@ -201,19 +203,19 @@ class BaseApplication extends Application implements ExceptionHandler
     /**
      * @inhericdoc
      */
-    public function add(Command $command)
+    public function add(Command $command): null|Command
     {
         if ($command instanceof IlluminateCommand) {
             $command->setLaravel($this->laravel);
         }
 
-        parent::add($command);
+        return parent::add($command);
     }
 
     /**
      * @inheritdoc
      */
-    protected function getDefaultInputDefinition()
+    protected function getDefaultInputDefinition(): InputDefinition
     {
         $message = 'The environment the command should run under';
         $option = new InputOption('--env', null, InputOption::VALUE_OPTIONAL, $message);
@@ -227,7 +229,7 @@ class BaseApplication extends Application implements ExceptionHandler
     /**
      * @inheritdoc
      */
-    public function report(Exception $ex)
+    public function report(Throwable $ex)
     {
         $logger = $this->container->get('logger');
         $logger->error($ex->getMessage(), [ 'exception' => $ex ]);
@@ -236,7 +238,7 @@ class BaseApplication extends Application implements ExceptionHandler
     /**
      * @inheritdoc
      */
-    public function shouldReport(Exception $e)
+    public function shouldReport(Throwable $e)
     {
         return true;
     }
@@ -245,7 +247,7 @@ class BaseApplication extends Application implements ExceptionHandler
      * @inheritdoc
      * @phan-suppress PhanUndeclaredTypeReturnType
      */
-    public function render($request, Exception $e)
+    public function render($request, Throwable $e)
     {
         throw new BadMethodCallException('Method render is not implemented.');
     }
@@ -253,7 +255,7 @@ class BaseApplication extends Application implements ExceptionHandler
     /**
      * @inheritdoc
      */
-    public function renderForConsole($output, Exception $e)
+    public function renderForConsole($output, Throwable $e)
     {
         $this->renderThrowable($e, $output);
     }

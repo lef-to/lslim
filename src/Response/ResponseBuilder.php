@@ -4,10 +4,10 @@ namespace LSlim\Response;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use Micheh\Cache\CacheUtil;
 use GuzzleHttp\Psr7\LazyOpenStream;
-use function GuzzleHttp\Psr7\stream_for;
+use GuzzleHttp\Psr7\Utils;
 use RuntimeException;
+use Slim\HttpCache\CacheProvider;
 
 class ResponseBuilder
 {
@@ -22,14 +22,15 @@ class ResponseBuilder
     protected $streamFactory;
 
     /**
-     * @var \Micheh\Cache\CacheUtil
+     * @var CacheProvider
      */
-    protected $util = null;
+    protected $cacheProvider;
 
     public function __construct(ResponseInterface $response, ?StreamFactoryInterface $streamFactory = null)
     {
-        $this->response = $response;
-        $this->streamFactory = $streamFactory;
+        $this->response         = $response;
+        $this->streamFactory    = $streamFactory;
+        $this->cacheProvider    = null;
     }
 
     public function get(): ResponseInterface
@@ -37,12 +38,12 @@ class ResponseBuilder
         return $this->response;
     }
 
-    protected function getUtil(): CacheUtil
+    public function getCacheProvider(): CacheProvider
     {
-        if ($this->util === null) {
-            $this->util = new CacheUtil();
+        if ($this->cacheProvider === null) {
+            $this->cacheProvider = new CacheProvider();
         }
-        return $this->util;
+        return $this->cacheProvider;
     }
 
     /**
@@ -83,7 +84,7 @@ class ResponseBuilder
         }
 
         $stream = ($this->streamFactory === null)
-            ? stream_for($json)
+            ? Utils::streamFor($json)
             : $this->streamFactory->createStream($json);
 
         $this->response = $this->response
@@ -103,30 +104,30 @@ class ResponseBuilder
 
     public function setEtag($etag, $weak = false): self
     {
-        $util = $this->getUtil();
-        $this->response = $util->withETag($this->response, $etag, $weak);
+        $provider = $this->getCacheProvider();
+        $this->response = $provider->withETag($this->response, $etag, $weak ? 'weak' : 'strong');
         return $this;
     }
 
     public function setLastModified($time)
     {
-        $util = $this->getUtil();
-        $this->response = $util->withLastModified($this->response, $time);
+        $provider = $this->getCacheProvider();
+        $this->response = $provider->withLastModified($this->response, $time);
         return $this;
     }
 
     public function allowCache($public = false, $maxAge = 600): self
     {
-        $util = $this->getUtil();
-        $this->response = $util->withCache($this->response, $public, $maxAge);
+        $provider = $this->getCacheProvider();
+        $this->response = $provider->allowCache($this->response, $public ? 'public' : 'private', $maxAge);
 
         return $this;
     }
 
     public function preventCache(): self
     {
-        $util = $this->getUtil();
-        $this->response = $util->withCachePrevention($this->response);
+        $provider = $this->getCacheProvider();
+        $this->response = $provider->denyCache($this->response);
 
         return $this;
     }
@@ -136,8 +137,8 @@ class ResponseBuilder
      */
     public function setExpires($time): self
     {
-        $util = $this->getUtil();
-        $this->response = $util->withExpires($this->response, $time);
+        $provider = $this->getCacheProvider();
+        $this->response = $provider->withExpires($this->response, $time);
 
         return $this;
     }
@@ -147,8 +148,8 @@ class ResponseBuilder
      */
     public function setRelativeExpires($seconds): self
     {
-        $util = $this->getUtil();
-        $this->response = $util->withRelativeExpires($this->response, $seconds);
+        $provider = $this->getCacheProvider();
+        $this->response = $provider->withExpires($this->response, time() + $seconds);
 
         return $this;
     }

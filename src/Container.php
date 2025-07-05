@@ -25,7 +25,7 @@ class Container extends PImpleContainer implements ContainerInterface
         return $this->offsetGet($id);
     }
 
-    public function has($id)
+    public function has($id): bool
     {
         return $this->offsetExists($id);
     }

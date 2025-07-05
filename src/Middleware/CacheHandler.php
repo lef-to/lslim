@@ -7,6 +7,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Micheh\Cache\CacheUtil;
+use Slim\HttpCache\CacheProvider;
 
 class CacheHandler implements MiddlewareInterface
 {
@@ -28,28 +29,22 @@ class CacheHandler implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $response = $handler->handle($request);
-        $util = new CacheUtil();
+        $response   = $handler->handle($request);
+        $maxAge     = $this->maxAge;
+        $provider   = new CacheProvider();
 
-        $maxAge = $this->maxAge;
         if (!$response->hasHeader('Cache-Control')) {
             $type = $this->type;
-            if ($type == 'public') {
-                $response = $util->withCache($response, true, $maxAge);
-            } elseif ($type == 'private') {
-                $response = $util->withCache($response, false, $maxAge);
+            if ($type === 'public' || $type === 'private') {
+                $response = $provider->allowCache($response, $type, $maxAge);
             } else {
-                $response = $util->withCachePrevention($response);
+                $response = $provider->denyCache($response);
                 $maxAge = 0;
             }
         }
 
         if (!$response->hasHeader('Expires')) {
-            $response = $util->withRelativeExpires($response, $maxAge);
-        }
-
-        if ($util->isNotModified($request, $response)) {
-            return $response->withStatus(304);
+            $response = $provider->withExpires($response, time() + $maxAge);
         }
 
         return $response;

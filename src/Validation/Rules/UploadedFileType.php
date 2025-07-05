@@ -2,11 +2,11 @@
 declare(strict_types=1);
 namespace LSlim\Validation\Rules;
 
-use Respect\Validation\Rules\AbstractRule;
 use Psr\Http\Message\UploadedFileInterface;
 use finfo;
+use Respect\Validation\Rules\Core\Simple;
 
-class UploadedFileType extends AbstractRule
+class UploadedFileType extends Simple
 {
     /**
      * @var string
@@ -29,7 +29,7 @@ class UploadedFileType extends AbstractRule
         $this->accesptTypes = $accesptTypes;
     }
 
-    public function validate($input)
+    public function isValid(mixed $input): bool
     {
         if (is_null($input)) {
             return true;
