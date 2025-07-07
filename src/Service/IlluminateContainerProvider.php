@@ -2,11 +2,11 @@
 declare(strict_types=1);
 namespace LSlim\Service;
 
+use Illuminate\Config\Repository;
 use PImple\ServiceProviderInterface;
 use Pimple\Container;
 use Illuminate\Contracts\Container\Container as ContainerContract;
 use LSlim\Illuminate\Container as IlluminateContainer;
-use LSlim\Illuminate\Config;
 
 class IlluminateContainerProvider implements ServiceProviderInterface
 {
@@ -19,22 +19,26 @@ class IlluminateContainerProvider implements ServiceProviderInterface
             $ret->instance('env', $c['env']);
 
             $ret->singleton('config', static function ($app) {
-                return new Config();
+                return new Repository();
             });
 
-            $ret->singleton('path.base', static function ($app) use ($c) {
+            $ret->singleton('path.base', static function ($app) {
+                $c = $app['lslim.container'];
                 return $c['base_dir'];
             });
 
-            $ret->singleton('path.storage', static function ($app) use ($c) {
+            $ret->singleton('path.storage', static function ($app) {
+                $c = $app['lslim.container'];
                 return $c['var_dir'];
             });
 
-            $ret->singleton('path.config', static function ($app) use ($c) {
+            $ret->singleton('path.config', static function ($app) {
+                $c = $app['lslim.container'];
                 return $c['config_dir'];
             });
 
-            $ret->singleton('path.database', static function ($app) use ($c) {
+            $ret->singleton('path.database', static function ($app) {
+                $c = $app['lslim.container'];
                 if (isset($c['database_dir'])) {
                     return $c['database_dir'];
                 }
@@ -44,7 +48,8 @@ class IlluminateContainerProvider implements ServiceProviderInterface
                     . 'database';
             });
 
-            $ret->singleton('path.stubs', static function ($app) use ($c) {
+            $ret->singleton('path.stubs', static function ($app) {
+                $c = $app['lslim.container'];
                 if (isset($c['stubs_dir'])) {
                     return $c['stubs_dir'];
                 }
