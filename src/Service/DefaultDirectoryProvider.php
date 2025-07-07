@@ -7,14 +7,8 @@ use Pimple\ServiceProviderInterface;
 
 class DefaultDirectoryProvider implements ServiceProviderInterface
 {
-    /**
-     * @var string
-     */
-    private $baseDir;
-
-    public function __construct($baseDir)
+    public function __construct(private string $baseDir)
     {
-        $this->baseDir = $baseDir;
     }
 
     public function register(Container $container)

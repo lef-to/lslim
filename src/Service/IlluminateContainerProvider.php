@@ -44,6 +44,16 @@ class IlluminateContainerProvider implements ServiceProviderInterface
                     . 'database';
             });
 
+            $ret->singleton('path.stubs', static function ($app) use ($c) {
+                if (isset($c['stubs_dir'])) {
+                    return $c['stubs_dir'];
+                }
+
+                return rtrim($c['base_dir'], DIRECTORY_SEPARATOR)
+                    . DIRECTORY_SEPARATOR
+                    . 'stubs';
+            });
+
             $ret->instance(ContainerContract::class, $ret);
 
             return $ret;

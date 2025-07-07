@@ -9,14 +9,8 @@ use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateCacheProvider implements ServiceProviderInterface
 {
-    /**
-     * @var mixed
-     */
-    private $config;
-
-    public function __construct($config = null)
+    public function __construct(private ?array $config = null)
     {
-        $this->config = $config;
     }
 
     public function register(Container $container)
@@ -28,7 +22,7 @@ class IlluminateCacheProvider implements ServiceProviderInterface
         $config = $this->config;
         $container->extend('laravel', static function (IlluminateContainer $laravel, Container $c) use ($config) {
             if ($config === null) {
-                $config = $c['config_dir'] . DIRECTORY_SEPARATOR . $c['env'] . DIRECTORY_SEPARATOR . 'cache.php';
+                $config = $c['config_dir'] . DIRECTORY_SEPARATOR . 'cache.php';
             }
 
             if (!is_array($config)) {

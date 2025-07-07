@@ -12,24 +12,12 @@ use Twig\Extension\DebugExtension;
 class TwigProvider implements ServiceProviderInterface
 {
     /**
-     * @var string|array|null
-     */
-    protected $path;
-
-    /**
-     * @var array
-     */
-    protected $option;
-
-    /**
      * @var string
      */
     protected $basePath = '';
 
-    public function __construct($option = [], $path = null)
+    public function __construct(protected array $option = [], protected $path = null)
     {
-        $this->path = $path;
-        $this->option = $option;
     }
 
     public function setBasePath($basePath): self

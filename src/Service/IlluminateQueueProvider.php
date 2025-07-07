@@ -10,14 +10,8 @@ use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateQueueProvider implements ServiceProviderInterface
 {
-    /**
-     * @var array|null
-     */
-    private $config;
-
-    public function __construct(?array $config = null)
+    public function __construct(private ?array $config = null)
     {
-        $this->config = $config;
     }
 
     public function register(Container $container)
@@ -29,7 +23,7 @@ class IlluminateQueueProvider implements ServiceProviderInterface
         $config = $this->config;
         $container->extend('laravel', static function (IlluminateContainer $laravel, Container $c) use ($config) {
             if ($config === null) {
-                $path = $c['config_dir'] . DIRECTORY_SEPARATOR . $c['env'] . DIRECTORY_SEPARATOR . 'queue.php';
+                $path = $c['config_dir'] . DIRECTORY_SEPARATOR . 'queue.php';
                 if (is_file($path)) {
                     $config = require $path;
                 } else {

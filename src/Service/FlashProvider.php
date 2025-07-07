@@ -8,14 +8,8 @@ use Slim\Flash\Messages as Flash;
 
 class FlashProvider implements ServiceProviderInterface
 {
-    /**
-     * @var string|null
-     */
-    protected $storageKey;
-
-    public function __construct($storageKey = null)
+    public function __construct(protected ?string $storageKey = null)
     {
-        $this->storageKey = $storageKey;
     }
 
     public function register(Container $container)

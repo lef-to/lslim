@@ -9,16 +9,10 @@ use LSlim\Mail\MailerFactory;
 class MailerProvider implements ServiceProviderInterface
 {
     /**
-     * @var array|null
-     */
-    protected $config;
-
-    /**
      * @param array|null $config
      */
-    public function __construct($config = null)
+    public function __construct(protected ?array $config = null)
     {
-        $this->config = $config;
     }
 
     public function register(Container $container)
@@ -27,8 +21,6 @@ class MailerProvider implements ServiceProviderInterface
         $container['mailer'] = static function (Container $c) use ($config) {
             if ($config === null) {
                 $path = rtrim($c['config_dir'], DIRECTORY_SEPARATOR)
-                    . DIRECTORY_SEPARATOR
-                    . trim($c['env'], DIRECTORY_SEPARATOR)
                     . DIRECTORY_SEPARATOR
                     . 'mailer.php';
                 $config = require($path);

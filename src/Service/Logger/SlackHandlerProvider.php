@@ -7,62 +7,27 @@ use Lefto\Monolog\Handler\SlackHandler;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Monolog\Logger;
+use Monolog\Level;
 
 class SlackHandlerProvider implements ServiceProviderInterface
 {
-    /**
-     * @var string
-     */
-    private $name;
-
-    /**
-     * @var string
-     */
-    private $url;
-
-    /**
-     * @var string|int
-     */
-    private $level;
-
-    /**
-     * @var int
-     */
-    protected $retryCount;
-
-    /**
-     * @var callable|null
-     */
-    protected $retryDelay;
-
-    /**
-     * @var bool
-     */
-    protected $throwException;
-
     public function __construct(
-        $name,
-        $url,
-        $level = Logger::ERROR,
-        $retryCount = 0,
-        callable $retryDelay = null,
-        bool $throwException = false
+        private $name,
+        private $url,
+        private $level = Level::Error,
+        protected $retryCount = 0,
+        protected ?callable $retryDelay = null,
+        protected bool $throwException = false
     ) {
-        $this->name = $name;
-        $this->url = $url;
-        $this->level = $level;
-        $this->retryCount = $retryCount;
-        $this->retryDelay = $retryDelay;
-        $this->throwException  = $throwException;
     }
 
     public function register(Container $container)
     {
-        $name = $this->name;
-        $url = $this->url;
-        $level = $this->level;
-        $retryCount = $this->retryCount;
-        $retryDelay = $this->retryDelay;
+        $name           = $this->name;
+        $url            = $this->url;
+        $level          = $this->level;
+        $retryCount     = $this->retryCount;
+        $retryDelay     = $this->retryDelay;
         $throwException = $this->throwException;
 
         $container->extend(
@@ -87,8 +52,8 @@ class SlackHandlerProvider implements ServiceProviderInterface
 
     protected static function createHandler($name, $url, $level, $retryCount, $retryDelay, $throwException)
     {
-        $handler = new SlackHandler($url, $level, true, $retryCount, $retryDelay, $throwException);
-        $formatter = new SlackFormatter($name);
+        $handler    = new SlackHandler($url, $level, true, $retryCount, $retryDelay, $throwException);
+        $formatter  = new SlackFormatter($name);
 
         $handler->setFormatter($formatter);
 

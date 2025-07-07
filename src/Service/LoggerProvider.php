@@ -6,6 +6,7 @@ use LSlim\Middleware\LoggerExtender;
 use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Monolog\Logger;
+use Monolog\Level;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RotatingFileHandler;
@@ -13,20 +14,8 @@ use Bramus\Monolog\Formatter\ColoredLineFormatter;
 
 class LoggerProvider implements ServiceProviderInterface
 {
-    /**
-     * @var string
-     */
-    private $name;
-
-    /**
-     * @var array
-     */
-    private $config;
-
-    public function __construct($name, array $config = [])
+    public function __construct(private string $name, private array $config = [])
     {
-        $this->name =  $name;
-        $this->config = $config;
     }
 
     public function register(Container $container)
@@ -35,7 +24,7 @@ class LoggerProvider implements ServiceProviderInterface
         $config = $this->config;
 
         $container['logger'] = static function (Container $c) use ($name, $config) {
-            $defaultLevel = ($c['env'] == 'production') ? Logger::INFO : Logger::DEBUG;
+            $defaultLevel = ($c['env'] == 'production') ? Level::Info : Level::Debug;
             $level = $config['level'] ?? $defaultLevel;
             $permission = $config['permission'] ?? 0664;
             $lock = $config['use_lock'] ?? false;

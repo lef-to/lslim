@@ -9,14 +9,8 @@ use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateDatabaseProvider implements ServiceProviderInterface
 {
-    /**
-     * @var array|null
-     */
-    private $config;
-
-    public function __construct(?array $config = null)
+    public function __construct(private ?array $config = null)
     {
-        $this->config = $config;
     }
 
     public function register(Container $container)
@@ -30,7 +24,7 @@ class IlluminateDatabaseProvider implements ServiceProviderInterface
             $db = new Database($c['laravel']);
 
             if ($config === null) {
-                $path = $c['config_dir'] . DIRECTORY_SEPARATOR . $c['env'] . DIRECTORY_SEPARATOR . 'db.php';
+                $path   = $c['config_dir'] . DIRECTORY_SEPARATOR . 'database.php';
                 $config = require $path;
             }
 

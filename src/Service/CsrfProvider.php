@@ -11,20 +11,8 @@ use LSlim\Middleware\CsrfWrapper;
 
 class CsrfProvider implements ServiceProviderInterface
 {
-    /**
-     * @var \Psr\Http\Message\ResponseFactoryInterface
-     */
-    protected $responseFactory;
-
-    /**
-     * @var array
-     */
-    protected $option;
-
-    public function __construct(ResponseFactoryInterface $responseFactory, array $option = [])
+    public function __construct(protected ResponseFactoryInterface $responseFactory, protected array $option = [])
     {
-        $this->responseFactory = $responseFactory;
-        $this->option = $option;
     }
 
     public function register(Container $container)

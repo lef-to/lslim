@@ -9,14 +9,8 @@ use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateRedisProvider implements ServiceProviderInterface
 {
-    /**
-     * @var array|null
-     */
-    private $config;
-
-    public function __construct(?array $config = null)
+    public function __construct(private ?array $config = null)
     {
-        $this->config = $config;
     }
 
     public function register(Container $container)
