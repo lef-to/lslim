@@ -71,7 +71,7 @@ class Mailer
      * @param string $subject
      * @param array|string|null $to
      * @param array|string|null $from
-     * @return \Swift_Message
+     * @return Email
      */
     public function create($subject, $to = null, $from = null)
     {
@@ -79,22 +79,27 @@ class Mailer
             ->subject($subject);
 
         if (!is_null($to)) {
-            $message->to($to);
+            $message->to($this->createAddress($to));
         }
 
-        if (is_null($from)) {
+        if (empty($from)) {
             if (isset($this->defaultFrom)) {
-                $key = array_key_first($this->defaultFrom);
-                $message->from(new Address($key, $this->defaultFrom[$key]));
+                $message->from($this->createAddress($this->defaultFrom));
             }
-        } elseif (is_array($from)) {
-            $key = array_key_first($from);
-            $message->from(new Address($key, $from[$key]));
         } else {
-            $message->from($from);
+            $message->from($this->createAddress($from));
         }
 
         return $message;
+    }
+
+    public function createAddress(string|array $addr): Address
+    {
+        if (is_array($addr)) {
+            $key = array_key_first($addr);
+            return new Address($key, $addr[$key]);
+        }
+        return new Address($addr);
     }
 
     public function createMessage(): Email

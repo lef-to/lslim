@@ -8,16 +8,6 @@ use Psr\Container\ContainerInterface;
 class TestCommand extends Command
 {
     /**
-     * @var \Psr\Container\ContainerInterface
-     */
-    private $container;
-
-    /**
-     * @var string
-     */
-    private $appName;
-
-    /**
      * @var string
      */
     protected $signature = 'mail:test {address : The address.}'
@@ -28,11 +18,9 @@ class TestCommand extends Command
      */
     protected $description = 'Send test mail';
 
-    public function __construct(ContainerInterface $container, $appName)
+    public function __construct(private ContainerInterface $container, private $appName)
     {
         parent::__construct();
-        $this->container = $container;
-        $this->appName = $appName;
     }
 
     public function handle()
@@ -55,8 +43,7 @@ This is a test mail.
 Please ignore it.
 
 EOM;
-
-        $message->setBody($body);
+        $message->text($body);
         $mailer->send($message);
     }
 }
