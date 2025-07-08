@@ -42,6 +42,9 @@
         "illuminate/config": "^12.19"
     },
     "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
         "psr-4": {
             "LSlim\\": "src"
         }

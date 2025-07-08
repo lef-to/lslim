@@ -6,6 +6,7 @@ use Psr\Container\ContainerInterface;
 use Pimple\Container as PImpleContainer;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use RuntimeException;
 use Slim\App;
 use Slim\Factory\AppFactory;
 use Slim\Factory\ServerRequestCreatorFactory;
@@ -14,7 +15,23 @@ use Slim\Interfaces\RouteParserInterface;
 
 class Container extends PImpleContainer implements ContainerInterface
 {
-    public function __construct($env, $values = [])
+    private static $instance = null;
+
+    public static function setup($env, $values = []): static
+    {
+        static::$instance = new static($env, $values);
+        return static::$instance;
+    }
+
+    public static function instance(): static
+    {
+        if (static::$instance === null) {
+            throw new RuntimeException('Container is not setup.');
+        }
+        return static::$instance;
+    }
+
+    private function __construct($env, $values = [])
     {
         parent::__construct($values);
         $this->offsetSet('env', $env);
