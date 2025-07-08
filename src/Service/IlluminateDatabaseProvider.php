@@ -5,6 +5,7 @@ namespace LSlim\Service;
 use PImple\Container;
 use Pimple\ServiceProviderInterface;
 use Illuminate\Database\Capsule\Manager as Database;
+use Illuminate\Database\DatabaseTransactionsManager;
 use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateDatabaseProvider implements ServiceProviderInterface
@@ -36,9 +37,23 @@ class IlluminateDatabaseProvider implements ServiceProviderInterface
         };
 
         $container->extend('laravel', static function (IlluminateContainer $laravel, Container $c) {
-            $laravel->singleton('db', static function ($app) use ($c) {
+            $laravel->singleton('db', static function ($app) {
+                $c = $app['lslim.container'];
                 return $c['db']->getDatabaseManager();
             });
+
+            $laravel->bind('db.connection', static function ($app) {
+                return $app['db']->connection();
+            });
+
+            $laravel->bind('db.schema', static function ($app) {
+                return $app['db.connection']->getSchemaBuilder();
+            });
+
+            $laravel->singleton('db.transactions', static function ($app) {
+                return new DatabaseTransactionsManager();
+            });
+
             return $laravel;
         });
     }
