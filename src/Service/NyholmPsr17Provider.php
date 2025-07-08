@@ -1,4 +1,5 @@
 <?php
+
 namespace LSlim\Service;
 
 use Pimple\Container;

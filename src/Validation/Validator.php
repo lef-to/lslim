@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Validation;
 
 use Respect\Validation\Validator as RespectValidator;
@@ -14,15 +16,15 @@ use Exception;
 
 class Validator
 {
-    const TYPE_FILE = 'file';
-    const TYPE_BOOL = 'bool';
-    const OPTION_TYPE = 'type';
-    const OPTION_DEFAULT = 'default';
-    const OPTION_KEY = 'key';
-    const OPTION_ASSERT = 'assert';
-    const OPTION_TRIM = 'trim';
-    const OPTION_EMPTY_TO_NULL = 'empty_to_null';
-    const OPTION_ALIAS = 'alias';
+    public const TYPE_FILE              = 'file';
+    public const TYPE_BOOL              = 'bool';
+    public const OPTION_TYPE            = 'type';
+    public const OPTION_DEFAULT         = 'default';
+    public const OPTION_KEY             = 'key';
+    public const OPTION_ASSERT          = 'assert';
+    public const OPTION_TRIM            = 'trim';
+    public const OPTION_EMPTY_TO_NULL   = 'empty_to_null';
+    public const OPTION_ALIAS           = 'alias';
 
     /**
      * @var array

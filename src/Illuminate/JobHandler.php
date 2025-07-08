@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Illuminate;
 
 use Illuminate\Queue\Jobs\Job;

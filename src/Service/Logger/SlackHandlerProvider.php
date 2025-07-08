@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Service\Logger;
 
 use Lefto\Monolog\Formatter\SlackFormatter;

@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Validation\Rules;
 
 use Illuminate\Database\ConnectionInterface;

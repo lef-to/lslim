@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Illuminate\Database;
 
 use Illuminate\Database\Query\Builder as QueryBuilder;

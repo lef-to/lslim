@@ -1,9 +1,10 @@
 <?php
+
 namespace LSlim\Form;
 
 class Phase
 {
-    const INPUT     = 1;
-    const CONFIRM   = 2;
-    const COMPLETE  = 3;
+    public const INPUT     = 1;
+    public const CONFIRM   = 2;
+    public const COMPLETE  = 3;
 }

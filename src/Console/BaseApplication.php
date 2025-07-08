@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Console;
 
 use Psr\Container\ContainerInterface;
@@ -49,7 +51,6 @@ use LSlim\Console\Command\Mail\TestCommand as MailTestCommand;
 use LSlim\Console\Command\Session\TableCommand as SessionTableCommand;
 use LSlim\Console\Command\Queue\SupervisorCommand;
 use BadMethodCallException;
-use Exception;
 use Symfony\Component\Console\Input\InputDefinition;
 use Throwable;
 

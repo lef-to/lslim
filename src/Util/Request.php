@@ -1,9 +1,10 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Util;
 
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\UriInterface;
 
 class Request
 {
@@ -12,7 +13,7 @@ class Request
      * @param array $types
      * @return bool
      */
-    public static function isAcceptable(RequestInterface $req, array $types)
+    public static function isAcceptable(RequestInterface $req, array $types): bool
     {
         $header = $req->getHeaderLine('Accept');
         $selected = array_intersect(explode(',', $header), $types);
@@ -28,7 +29,7 @@ class Request
      * @param \Psr\Http\Message\RequestInterface $req
      * @return bool
      */
-    public static function isJsonAcceptable(RequestInterface $req)
+    public static function isJsonAcceptable(RequestInterface $req): bool
     {
         return static::isAcceptable(
             $req,
@@ -44,7 +45,7 @@ class Request
      * @param \Psr\Http\Message\RequestInterface $req
      * @return bool
      */
-    public static function isXmlAcceptable(RequestInterface $req)
+    public static function isXmlAcceptable(RequestInterface $req): bool
     {
         return static::isAcceptable(
             $req,

@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Validation\Exceptions;
 
-use \Respect\Validation\Exceptions\ValidationException;
+use Respect\Validation\Exceptions\ValidationException;
 
 class UploadedFileException extends ValidationException
 {

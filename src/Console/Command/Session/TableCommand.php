@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Console\Command\Session;
 
 use Illuminate\Console\Command;

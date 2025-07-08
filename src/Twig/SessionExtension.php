@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Twig;
 
 use Illuminate\Support\Arr;

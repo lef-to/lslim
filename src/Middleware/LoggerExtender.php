@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Middleware;
 
 use Monolog\Logger;
@@ -33,7 +35,7 @@ class LoggerExtender implements MiddlewareInterface
         $attr = $this->clientIpAttribute;
 
         $this->container->extend('logger', static function (Logger $logger, Container $c) use ($request, $attr) {
-            $processor = new class($request, $attr) implements ProcessorInterface {
+            $processor = new class ($request, $attr) implements ProcessorInterface {
                 private $request;
                 private $attr;
 

@@ -54,7 +54,8 @@
         "nyholm/psr7": "^1.2",
         "illuminate/queue": "^12.0",
         "illuminate/bus": "^12.0",
-        "illuminate/redis": "^12.0"
+        "illuminate/redis": "^12.0",
+        "squizlabs/php_codesniffer": "^3.13"
     },
     "repositories": [
         {

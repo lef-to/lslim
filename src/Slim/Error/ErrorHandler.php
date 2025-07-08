@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Slim\Error;
 
 use Slim\Handlers\ErrorHandler as BaseHandler;
