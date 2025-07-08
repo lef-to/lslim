@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Response;
 
 use Psr\Http\Message\ResponseInterface;
@@ -100,6 +102,8 @@ class ResponseBuilder
         $this->response = $this->response
             ->withHeader('Location', $location)
             ->withStatus($code);
+
+        return $this;
     }
 
     public function setEtag($etag, $weak = false): self
