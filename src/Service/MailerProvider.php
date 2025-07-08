@@ -1,5 +1,7 @@
 <?php
+
 declare(strict_types=1);
+
 namespace LSlim\Service;
 
 use Pimple\Container;
@@ -18,7 +20,7 @@ class MailerProvider implements ServiceProviderInterface
     public function register(Container $container)
     {
         $config = $this->config;
-        $container['mailer'] = static function (Container $c) use ($config) {
+        $container['mailer_factory'] = static function (Container $c) use ($config) {
             if ($config === null) {
                 $path = rtrim($c['config_dir'], DIRECTORY_SEPARATOR)
                     . DIRECTORY_SEPARATOR
