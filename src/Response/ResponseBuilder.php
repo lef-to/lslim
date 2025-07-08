@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use GuzzleHttp\Psr7\LazyOpenStream;
 use GuzzleHttp\Psr7\Utils;
+use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 use Slim\HttpCache\CacheProvider;
 
@@ -53,7 +54,7 @@ class ResponseBuilder
      * @param string|bool $mimeType
      * @param bool $cacheable
      */
-    public function writeFile($path, $mimeType = true, $cacheable = true): self
+    public function writeFile($path, $mimeType = true, $cacheable = true): static
     {
         $stream = ($this->streamFactory === null)
             ? new LazyOpenStream($path, 'rb')
@@ -78,7 +79,7 @@ class ResponseBuilder
         return $this;
     }
 
-    public function writeJson($value, $option = 0, $depth = 512): self
+    public function writeJson($value, $option = 0, $depth = 512): static
     {
         $json = json_encode($value, $option, $depth);
         if ($json === false) {
@@ -97,7 +98,28 @@ class ResponseBuilder
         return $this;
     }
 
-    public function setRedirect($location, $code = 302)
+    protected function makeStream($value, array $options = []): StreamInterface
+    {
+        if ($this->streamFactory !== null) {
+            if (is_string($value)) {
+                return $this->streamFactory->createStream($value);
+            }
+            if (is_resource($value)) {
+                return $this->streamFactory->createStreamFromResource($value);
+            }
+        }
+        return Utils::streamFor($value, $options);
+    }
+
+    public function setBody($value, array $options = []): static
+    {
+        $stream = $this->makeStream($value, $options);
+        $this->response = $this->response->withBody($stream);
+
+        return $this;
+    }
+
+    public function setRedirect($location, $code = 302): static
     {
         $this->response = $this->response
             ->withHeader('Location', $location)
@@ -106,21 +128,21 @@ class ResponseBuilder
         return $this;
     }
 
-    public function setEtag($etag, $weak = false): self
+    public function setEtag($etag, $weak = false): static
     {
         $provider = $this->getCacheProvider();
         $this->response = $provider->withETag($this->response, $etag, $weak ? 'weak' : 'strong');
         return $this;
     }
 
-    public function setLastModified($time)
+    public function setLastModified($time): static
     {
         $provider = $this->getCacheProvider();
         $this->response = $provider->withLastModified($this->response, $time);
         return $this;
     }
 
-    public function allowCache($public = false, $maxAge = 600): self
+    public function allowCache($public = false, $maxAge = 600): static
     {
         $provider = $this->getCacheProvider();
         $this->response = $provider->allowCache($this->response, $public ? 'public' : 'private', $maxAge);
@@ -128,7 +150,7 @@ class ResponseBuilder
         return $this;
     }
 
-    public function preventCache(): self
+    public function preventCache(): static
     {
         $provider = $this->getCacheProvider();
         $this->response = $provider->denyCache($this->response);
@@ -139,7 +161,7 @@ class ResponseBuilder
     /*
      * @param int|string|DateTime $time
      */
-    public function setExpires($time): self
+    public function setExpires($time): static
     {
         $provider = $this->getCacheProvider();
         $this->response = $provider->withExpires($this->response, $time);
@@ -150,7 +172,7 @@ class ResponseBuilder
     /*
      * @param int $seconds
      */
-    public function setRelativeExpires($seconds): self
+    public function setRelativeExpires($seconds): static
     {
         $provider = $this->getCacheProvider();
         $this->response = $provider->withExpires($this->response, time() + $seconds);
@@ -158,7 +180,7 @@ class ResponseBuilder
         return $this;
     }
 
-    public function setAttachment($name, $localizedName): self
+    public function setAttachment($name, $localizedName): static
     {
         $disposition = [
             'attachment'
