@@ -142,10 +142,15 @@ class ResponseBuilder
         return $this;
     }
 
-    public function allowCache($public = false, $maxAge = 600): static
+    public function allowCache($public = false, $maxAge = 600, $mustRevalidate = false): static
     {
         $provider = $this->getCacheProvider();
-        $this->response = $provider->allowCache($this->response, $public ? 'public' : 'private', $maxAge);
+        $this->response = $provider->allowCache(
+            $this->response,
+            $public ? 'public' : 'private',
+            $maxAge,
+            $mustRevalidate
+        );
 
         return $this;
     }
