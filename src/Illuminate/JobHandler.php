@@ -6,14 +6,16 @@ namespace LSlim\Illuminate;
 
 use Illuminate\Queue\Jobs\Job;
 use Exception;
+use Psr\Container\ContainerInterface;
+use RuntimeException;
 
 abstract class JobHandler
 {
     /** @var \Illuminate\Queue\Jobs\Job */
-    private $job;
+    private $job = null;
 
-    /** @var \Psr\Container\ContainerInterface */
-    private $container;
+    /** @var \Psr\Container\ContainerInterface|null */
+    protected $container = null;
 
     public function fire(Job $job, $args)
     {
@@ -40,17 +42,23 @@ abstract class JobHandler
             if (!$job->isDeleted() && !$job->isReleased() && !$job->hasFailed()) {
                 $job->fail($ex);
             }
+        } finally {
+            $this->job = null;
         }
     }
 
     protected function delete()
     {
-        $this->job->delete();
+        if ($this->job !== null) {
+            $this->job->delete();
+        }
     }
 
     protected function release()
     {
-        $this->job->release();
+        if ($this->job !== null) {
+            $this->job->release();
+        }
     }
 
     abstract protected function handle($args);
