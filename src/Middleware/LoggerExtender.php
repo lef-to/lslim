@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace LSlim\Middleware;
 
 use Monolog\Logger;
+use Monolog\LogRecord;
 use Monolog\Processor\ProcessorInterface;
 use Pimple\Container;
 use Psr\Http\Message\ResponseInterface;
@@ -45,7 +46,7 @@ class LoggerExtender implements MiddlewareInterface
                     $this->attr = $attr;
                 }
 
-                public function __invoke(array $record)
+                public function __invoke(LogRecord $record)
                 {
                     $ip = $this->request->getAttribute($this->attr);
                     if ($ip === null) {

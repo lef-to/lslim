@@ -36,14 +36,14 @@ class ViewExtender implements MiddlewareInterface
     {
         $basePath = $this->basePath;
         $this->container->extend('view', static function (View $view, Container $c) use ($request, $basePath) {
-            if (!$view->getEnvironment()->hasExtension(TwigExtension::class)) {
-                $runtimeLoader = new TwigRuntimeLoader(
-                    $c[RouteParserInterface::class],
-                    $request->getUri(),
-                    $basePath
-                );
+            $runtimeLoader = new TwigRuntimeLoader(
+                $c[RouteParserInterface::class],
+                $request->getUri(),
+                $basePath
+            );
 
-                $view->getEnvironment()->addRuntimeLoader($runtimeLoader);
+            $view->getEnvironment()->addRuntimeLoader($runtimeLoader);
+            if (!$view->getEnvironment()->hasExtension(TwigExtension::class)) {
                 $view->getEnvironment()->addExtension(new TwigExtension());
             }
 
