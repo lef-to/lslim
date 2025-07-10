@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace LSlim\Slim\Error;
 
+use LSlim\Logger\LazyLogger;
 use Slim\Handlers\ErrorHandler as BaseHandler;
 use Slim\Interfaces\CallableResolverInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
@@ -27,18 +28,16 @@ class ErrorHandler extends BaseHandler
     public function __construct(
         CallableResolverInterface $callableResolver,
         ResponseFactoryInterface $responseFactory,
-        ContainerInterface $container
+        ContainerInterface $container,
+        ?LoggerInterface $logger = null,
     ) {
-        parent::__construct($callableResolver, $responseFactory);
         $this->container = $container;
+        parent::__construct($callableResolver, $responseFactory, $logger);
     }
 
-    /**
-     * @inheritdoc
-     */
     protected function getDefaultLogger(): LoggerInterface
     {
-        return $this->container->get('logger');
+        return new LazyLogger($this->container);
     }
 
     /**
