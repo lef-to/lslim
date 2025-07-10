@@ -24,12 +24,8 @@ trait SimpleFormTrait
             $request,
             $response,
             function (ResponseInterface $res, $phase) use ($action, $templatePrefix) {
-                if ($phase == Phase::INPUT) {
-                    return $this->render($res, $templatePrefix . 'input', $this->data);
-                }
-
-                if ($phase == Phase::CONFIRM) {
-                    return $this->render($res, $templatePrefix . 'confirm', $this->data);
+                if ($phase === Phase::INPUT || $phase === Phase::CONFIRM) {
+                    return $this->render($res, $templatePrefix . $phase->value, $this->data);
                 }
 
                 $result = $action($res);
@@ -37,7 +33,7 @@ trait SimpleFormTrait
                     return $result;
                 }
 
-                return $this->render($res, $templatePrefix . 'complete', $this->data);
+                return $this->render($res, $templatePrefix . Phase::COMPLETE->value, $this->data);
             },
             $formName
         );

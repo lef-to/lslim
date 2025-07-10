@@ -30,9 +30,11 @@ trait FormTrait
             $formName = $basePath . $uri->getPath();
         }
 
-        $sessionKey = $this->data[Option::SESSION_KEY] ?? '__form';
         /** @var \LSlim\Form\UploadedFileManagerInterface $fileManager */
-        $fileManager = $this->data[Option::UPLOADED] ?? null;
+        $fileManager    = $this->data[Option::UPLOADED] ?? null;
+        $sessionKey     = $this->data[Option::SESSION_KEY] ?? '__form';
+        $inputKey       = 'input';
+        $flashKey       = 'flash';
 
         if (!isset($this->data[Option::PHASE_NAME])) {
             $this->data[Option::PHASE_NAME] = '__form_phase';
@@ -48,8 +50,12 @@ trait FormTrait
                 $this->data[Option::BACK_NAME] = '__form_back';
             }
 
-            $phase = $body[$this->data[Option::PHASE_NAME]] ?? '';
-            if ($phase === 'confirm' || $phase === '') {
+            $phase = $body[$this->data[Option::PHASE_NAME]] ?? null;
+            $phase = empty($phase)
+                ? null
+                : Phase::from($phase);
+
+            if ($phase === null || $phase === Phase::CONFIRM) {
                 $validator = $this->data[Option::VALIDATOR] ?? null;
                 if (is_callable($validator)) {
                     $validator = $validator($request);
@@ -68,8 +74,10 @@ trait FormTrait
                     }
 
                     if ($validator->isValid()) {
-                        if ($phase == 'confirm') {
-                            $_SESSION[$sessionKey][$formName] = [ 'input' => $this->data[Option::INPUT] ];
+                        if ($phase === Phase::CONFIRM) {
+                            $_SESSION[$sessionKey][$formName] = [
+                                $inputKey => $this->data[Option::INPUT]
+                            ];
                             return $action($response, Phase::CONFIRM);
                         }
                     } else {
@@ -86,23 +94,25 @@ trait FormTrait
                     }
                 } else {
                     $this->data[Option::INPUT] = [];
-                    if ($phase == 'confirm') {
+                    if ($phase === Phase::CONFIRM) {
                         $_SESSION[$sessionKey][$formName] = [];
                         return $action($response, Phase::CONFIRM);
                     }
                 }
             }
 
-            if ($phase == 'confirmed' || $phase === '') {
-                if ($phase == 'confirmed') {
-                    $input = isset($_SESSION[$sessionKey][$formName]['input'])
-                        ? $_SESSION[$sessionKey][$formName]['input']
+            if ($phase === null || $phase === Phase::CONFIRMED) {
+                if ($phase === Phase::CONFIRMED) {
+                    $input = isset($_SESSION[$sessionKey][$formName][$inputKey])
+                        ? $_SESSION[$sessionKey][$formName][$inputKey]
                         : null;
 
                     if (isset($body[$this->data[Option::BACK_NAME]]) || $input === null) {
                         unset($_SESSION[$sessionKey][$formName]);
                         if ($input !== null) {
-                            $_SESSION[$sessionKey][$formName] = [ 'flash' => $input ];
+                            $_SESSION[$sessionKey][$formName] = [
+                                $flashKey => $input
+                            ];
                         }
 
                         return $response
@@ -127,7 +137,7 @@ trait FormTrait
 
                     $this->data[Option::EXCEPTION] = $ex;
 
-                    if ($phase === 'confirmed') {
+                    if ($phase === Phase::CONFIRMED) {
                         return $action($response, Phase::CONFIRM);
                     }
 
@@ -135,8 +145,8 @@ trait FormTrait
                 }
             }
         } else {
-            $input = (isset($_SESSION[$sessionKey][$formName]['flash']))
-                ? $_SESSION[$sessionKey][$formName]['flash']
+            $input = (isset($_SESSION[$sessionKey][$formName][$flashKey]))
+                ? $_SESSION[$sessionKey][$formName][$flashKey]
                 : null;
 
             if (isset($_SESSION[$sessionKey][$formName])) {

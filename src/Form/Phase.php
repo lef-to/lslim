@@ -2,9 +2,10 @@
 
 namespace LSlim\Form;
 
-class Phase
+enum Phase: string
 {
-    public const INPUT     = 1;
-    public const CONFIRM   = 2;
-    public const COMPLETE  = 3;
+    case INPUT      = "input";
+    case CONFIRM    = "confirm";
+    case CONFIRMED  = "confirmed";
+    case COMPLETE   = "complete";
 }
