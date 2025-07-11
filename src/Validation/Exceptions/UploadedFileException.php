@@ -6,9 +6,9 @@ namespace LSlim\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
 
-class UploadedFileException extends ValidationException
+final class UploadedFileException extends ValidationException
 {
-    public static $defaultTemplates = [
+    protected $defaultTemplates = [
         self::MODE_DEFAULT => [
             self::STANDARD => 'Failed to upload:（{{errorCode}}）',
         ],

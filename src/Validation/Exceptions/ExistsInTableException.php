@@ -6,9 +6,9 @@ namespace LSlim\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
 
-class ExistsInTableException extends ValidationException
+final class ExistsInTableException extends ValidationException
 {
-    public static $defaultTemplates = [
+    protected $defaultTemplates = [
         self::MODE_DEFAULT => [
             self::STANDARD => '{{name}} must exists in table.',
         ],

@@ -6,9 +6,9 @@ namespace LSlim\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
 
-class UploadedFileTypeException extends ValidationException
+final class UploadedFileTypeException extends ValidationException
 {
-    public static $defaultTemplates = [
+    protected $defaultTemplates = [
         self::MODE_DEFAULT => [
             self::STANDARD => 'File type is wrong.',
         ],

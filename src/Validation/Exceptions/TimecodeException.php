@@ -6,9 +6,9 @@ namespace LSlim\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
 
-class TimecodeException extends ValidationException
+final class TimecodeException extends ValidationException
 {
-    public static $defaultTemplates = [
+    protected $defaultTemplates = [
         self::MODE_DEFAULT => [
             self::STANDARD => '{{name}} must be valid timecode',
         ],

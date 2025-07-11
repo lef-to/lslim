@@ -6,9 +6,9 @@ namespace LSlim\Validation\Exceptions;
 
 use Respect\Validation\Exceptions\ValidationException;
 
-class HiraganaException extends ValidationException
+final class HiraganaException extends ValidationException
 {
-    public static $defaultTemplates = [
+    protected $defaultTemplates = [
         self::MODE_DEFAULT => [
             self::STANDARD => '{{name}} contains non-hiragana character.',
         ],
