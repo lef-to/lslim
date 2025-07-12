@@ -23,17 +23,17 @@ class LoggerExtender implements MiddlewareInterface
     /**
      * @var string
      */
-    protected $clientIpAttribute;
+    protected $clientIpAttributeName;
 
-    public function __construct(Container $container, $clientIpAttribute = 'client-ip')
+    public function __construct(Container $container, $clientIpAttributeName = 'client-ip')
     {
         $this->container = $container;
-        $this->clientIpAttribute = $clientIpAttribute;
+        $this->clientIpAttributeName = $clientIpAttributeName;
     }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        $attr = $this->clientIpAttribute;
+        $attr = $this->clientIpAttributeName;
 
         $this->container->extend('logger', static function (Logger $logger, Container $c) use ($request, $attr) {
             $processor = new class ($request, $attr) implements ProcessorInterface {
@@ -57,8 +57,8 @@ class LoggerExtender implements MiddlewareInterface
                         }
                     }
 
-                    $record['extra'] = array_merge(
-                        $record['extra'],
+                    $record->extra = array_merge(
+                        $record->extra,
                         [
                             'client_ip' => $ip,
                             'http_method' => $this->request->getMethod(),

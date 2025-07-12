@@ -33,7 +33,7 @@ class LoggerProvider implements ServiceProviderInterface
             $rotate = $config['rotate'] ?? 30;
             $logDir = $config['dir'] ?? $c['log_dir'];
             $format = $config['format']
-                ?? "[%datetime%][%extra.client_ip%] \"%extra.http_method% %extra.request_path%\" %level_name%: %message% %context%\n";
+                ?? "[%datetime%] %level_name%: %message% %context% %extra%\n";
 
             $logger = new Logger($name);
 
