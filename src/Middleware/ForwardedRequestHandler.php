@@ -87,23 +87,23 @@ class ForwardedRequestHandler implements MiddlewareInterface
 
         $request = $request->withUri($uri);
 
-        $forwarded = $request->getHeaderLine('X-Forwarded-For');
-        if (!empty($forwarded)) {
-            $forwarded = explode(',', $forwarded);
-            $forwarded_cnt = count($forwarded);
+        if ($this->trustedProxyCount > 0) {
+            $forwarded = $request->getHeaderLine('X-Forwarded-For');
+            if (!empty($forwarded)) {
+                $forwarded = explode(',', $forwarded);
+                $forwarded_cnt = count($forwarded);
 
-            if ($forwarded_cnt) {
-                if ($this->trustedProxyCount) {
+                if ($forwarded_cnt) {
                     $cnt = min($forwarded_cnt, $this->trustedProxyCount);
                     if ($cnt !== $forwarded_cnt) {
                         $forwarded = array_slice($forwarded, -$cnt);
                     }
-                }
 
-                $request = $request->withAttribute(
-                    $this->clientIpAttributeName,
-                    trim($forwarded[0], " []")
-                );
+                    $request = $request->withAttribute(
+                        $this->clientIpAttributeName,
+                        trim($forwarded[0], " []")
+                    );
+                }
             }
         }
 
