@@ -19,7 +19,7 @@ class FlashProvider implements ServiceProviderInterface
         $storageKey = $this->storageKey;
 
         $container['flash'] = static function (Container $c) use ($storageKey) {
-            $storage = [];
+            $storage = null; // $_SESSIONを使用する
             return new Flash($storage, $storageKey);
         };
     }
