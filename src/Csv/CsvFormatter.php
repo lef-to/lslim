@@ -89,7 +89,7 @@ class CsvFormatter
             }
 
             if ($this->convert) {
-                $v = mb_convert_encoding($v, $this->charset, 'UTF-8');
+                $v = mb_convert_encoding((string)$v, $this->charset, 'UTF-8');
             }
 
             if ($first) {
