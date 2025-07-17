@@ -188,7 +188,7 @@ class BaseApplication extends Application implements ExceptionHandler
             }
         }
 
-        if ($container->has('mailer')) {
+        if ($container->has('mailer_factory')) {
             $this->add(new MailTestCommand($this->container, $appName));
         }
 

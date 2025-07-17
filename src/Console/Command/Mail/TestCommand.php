@@ -32,7 +32,7 @@ class TestCommand extends Command
 
         $env = $this->container->get('env');
         /** @var \LSlim\Mail\MailerFactory $mailerFactory */
-        $mailerFactory = $this->container->get('mailer');
+        $mailerFactory = $this->container->get('mailer_factory');
         $mailer = $mailerFactory->create();
         $message = $mailer->create(
             'Test mail: ' . $this->appName . ' (' . $env . ')',
