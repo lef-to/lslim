@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace LSLim\Service;
+namespace LSlim\Service;
 
 use LSlim\Middleware\LoggerExtender;
 use Pimple\Container;

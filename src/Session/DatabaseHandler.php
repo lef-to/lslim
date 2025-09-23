@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Lslim\Session;
+namespace LSlim\Session;
 
 use SessionHandlerInterface;
 use Psr\Container\ContainerInterface;
