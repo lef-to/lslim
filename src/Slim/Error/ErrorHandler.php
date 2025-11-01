@@ -11,6 +11,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LogLevel;
+use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
 
 class ErrorHandler extends BaseHandler
@@ -46,6 +47,8 @@ class ErrorHandler extends BaseHandler
     protected function logError(string $error): void
     {
         if ($this->exception instanceof HttpNotFoundException) {
+            $level = LogLevel::WARNING;
+        } elseif ($this->exception instanceof HttpMethodNotAllowedException) {
             $level = LogLevel::WARNING;
         } else {
             $level = LogLevel::CRITICAL;
