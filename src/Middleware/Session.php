@@ -140,24 +140,22 @@ class Session implements MiddlewareInterface
                 }
 
                 $newId = session_id();
-                if ($id != $newId) {
-                    $cookie = Cookies::get($response, $name);
+                $cookie = Cookies::get($response, $name);
 
-                    if ($cookie->getValue() === null) {
-                        $cookie = SetCookie::create($name)
-                            ->withValue($newId)
-                            ->withPath($this->path)
-                            ->withExpires($this->expires)
-                            ->withHttpOnly($this->httpOnly);
+                if ($cookie->getValue() === null) {
+                  $cookie = SetCookie::create($name)
+                    ->withValue($newId)
+                    ->withPath($this->path)
+                    ->withExpires($this->expires)
+                    ->withHttpOnly($this->httpOnly);
 
-                        if ($this->sameSite === null) {
-                            $cookie = $cookie->withoutSameSite();
-                        } else {
-                            $cookie = $cookie->withSameSite(SameSite::fromString($this->sameSite));
-                        }
-
-                        $response = $response->withAddedHeader(SetCookies::SET_COOKIE_HEADER, (string) $cookie);
+                    if ($this->sameSite === null) {
+                      $cookie = $cookie->withoutSameSite();
+                    } else {
+                      $cookie = $cookie->withSameSite(SameSite::fromString($this->sameSite));
                     }
+
+                    $response = $response->withAddedHeader(SetCookies::SET_COOKIE_HEADER, (string) $cookie);
                 }
             }
 
