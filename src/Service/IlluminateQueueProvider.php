@@ -8,6 +8,7 @@ use Pimple\Container;
 use Pimple\ServiceProviderInterface;
 use Illuminate\Queue\QueueManager;
 use Illuminate\Queue\QueueServiceProvider;
+use Illuminate\Contracts\Queue\Factory as QueueFactoryContract;
 use LSlim\Illuminate\Container as IlluminateContainer;
 
 class IlluminateQueueProvider implements ServiceProviderInterface
@@ -52,6 +53,7 @@ class IlluminateQueueProvider implements ServiceProviderInterface
             $laravel->singleton('queue', static function ($app) use ($c) {
                 return $c['queue'];
             });
+            $laravel->alias('queue', QueueFactoryContract::class);
 
             return $laravel;
         });

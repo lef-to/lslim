@@ -55,12 +55,12 @@ class ForwardedRequestHandler implements MiddlewareInterface
     {
         $uri = $request->getUri();
 
-        $proto = $request->getHeaderLine('CLOUDFRONT_FORWARDED_PROTO');
+        $proto = $request->getHeaderLine('CloudFront-Forwarded-Proto');
         $port = '';
 
         if ($proto == '') {
-            $proto = $request->getHeaderLine('X_FORWARDED_PROTO');
-            $port = $request->getHeaderLine('X_FORWARDED_PORT');
+            $proto = $request->getHeaderLine('X-Forwarded-Proto');
+            $port = $request->getHeaderLine('X-Forwarded-Port');
         }
 
         if ($proto != $uri->getScheme()) {
@@ -82,7 +82,7 @@ class ForwardedRequestHandler implements MiddlewareInterface
         }
 
         if ($this->clearUserInfo) {
-            $uri->withUserInfo('', '');
+            $uri = $uri->withUserInfo('');
         }
 
         $request = $request->withUri($uri);

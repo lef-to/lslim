@@ -62,10 +62,7 @@ class CsvReader implements IteratorAggregate
             ? $this->path
             : 'php://filter/read=convert.iconv.' . $this->charset . '%2Futf-8/resource=' . $this->path;
 
-        $delimiter = $this->delimiter
-            ?? ($this->charset == 'utf-16')
-            ? "\t"
-            : ",";
+        $delimiter = $this->delimiter ?? (($this->charset == 'utf-16') ? "\t" : ",");
         $enclosure = $this->enclosure ?? '"';
         $escape = $this->escape ?? "\\";
 

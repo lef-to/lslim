@@ -79,7 +79,7 @@ class Validator
             }, $value);
         }
 
-        if ($trim && $value !== null) {
+        if ($trim && is_string($value)) {
             $value = trim($value);
         }
 
