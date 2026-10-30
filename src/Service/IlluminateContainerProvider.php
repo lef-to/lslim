@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace LSlim\Service;
 
 use Illuminate\Config\Repository;
-use PImple\ServiceProviderInterface;
+use Pimple\ServiceProviderInterface;
 use Pimple\Container;
 use Illuminate\Contracts\Container\Container as ContainerContract;
 use LSlim\Illuminate\Container as IlluminateContainer;
