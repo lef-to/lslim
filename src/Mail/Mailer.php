@@ -41,7 +41,7 @@ class Mailer
      * @param array $config
      * @param \Psr\Log\LoggerInterface|null $logger
      */
-    public function __construct($charset, array $config, LoggerInterface $logger = null)
+    public function __construct($charset, array $config, ?LoggerInterface $logger = null)
     {
         $transportType = $config['transport'] ?? 'smtp';
 
@@ -129,5 +129,16 @@ class Mailer
     public function getDefaultFromAddress()
     {
         return $this->defaultFrom;
+    }
+
+    public function getMessageRecipients(Email $message): array
+    {
+        $addresses = static fn(Address $address): string => $address->getAddress();
+
+        return [
+            'to' => array_map($addresses, $message->getTo()),
+            'cc' => array_map($addresses, $message->getCc()),
+            'bcc' => array_map($addresses, $message->getBcc()),
+        ];
     }
 }
