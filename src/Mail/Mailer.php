@@ -53,7 +53,7 @@ class Mailer
                 $config['host'],
                 $config['username'],
                 $config['password'],
-                $config['port'],
+                isset($config['port']) ? (int)$config['port'] : null,
                 $config['options'] ?? []
             );
             $factory = new Transport(iterator_to_array(Transport::getDefaultFactories(null, null, $logger)));
